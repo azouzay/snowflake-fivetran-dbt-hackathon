@@ -1,0 +1,171 @@
+version: 2
+
+# ---------------------------------------------------------------------------
+# NOT YET INTROSPECTED against a live Fivetran-landed copy of this schema.
+# The column list and types below come from a working dbt project against
+# the same underlying "industry" fixture database (see BUILD-NOTES.md), but
+# nobody has run Step 1 of docs/adding-an-industry.md against THIS track's
+# own Fivetran sync yet: exact row counts, every value of every categorical
+# column, ranges, and sentinel values. Do that before seeding any more bugs
+# or writing accepted_values lists from anything other than what is verified
+# here. Write findings into BUILD-NOTES.md as you go.
+# ---------------------------------------------------------------------------
+
+sources:
+  - name: pharma_raw
+    description: >
+      Raw pharma clinical-trial records landed in Snowflake by Fivetran from
+      the Google Cloud SQL for PostgreSQL `industry` database, schema
+      `pharma`. Nothing in this schema is edited by hand.
+
+      One source table. Patient-level clinical trial enrollment, dropout and
+      protocol-amendment data across multiple disease areas and sponsors.
+    database: "{{ var('source_database') }}"
+    schema: "{{ var('pharma_source_schema') }}"
+
+    tables:
+      - name: phr_records
+        description: >
+          One row per patient enrollment in a clinical trial. Row count not
+          yet confirmed against this copy; introspect before the event.
+        columns:
+          - name: record_id
+            description: Primary key.
+          - name: trial_id
+            description: Identifier for the trial.
+          - name: protocol_id
+            description: Identifier for the trial protocol.
+          - name: trial_name
+            description: Therapeutic category, e.g. Oncology, Pain Management, Cardiovascular.
+          - name: sponsor_name
+            description: Organization sponsoring the trial.
+          - name: disease_area
+            description: Medical specialty, e.g. Oncology, Cardiology, Immunology.
+          - name: patient_id
+            description: >
+              Patient identifier. Governance note: this is a trial-subject
+              identifier, not a name, but treat it the same way the financial
+              services track treats customer_id: fine to carry as a join key,
+              never to be joined back to a real-world identity downstream.
+          - name: patient_age
+            description: Age of the patient at enrollment.
+          - name: patient_gender
+            description: Patient gender.
+          - name: site_id
+            description: Identifier for the trial site.
+          - name: site_name
+            description: Type of facility conducting the trial.
+          - name: trial_status
+            description: >
+              Current operational status. Verify the full value list before
+              writing an accepted_values test; do not assume the list in
+              docs/BUILD-NOTES.md is exhaustive for this copy.
+          - name: regulatory_approval_status
+            description: Regulatory review status.
+          - name: enrollment_date
+            description: Date the patient enrolled. TEXT in the source; cast in staging.
+          - name: protocol_amendment_date
+            description: Date of the most recent protocol amendment. TEXT in the source; cast in staging.
+          - name: enrollment_rate
+            description: Percentage of target patients successfully enrolled in the trial.
+          - name: dropout_rate
+            description: Percentage of enrolled patients who discontinued the trial before completion.
+          - name: _fivetran_synced
+            description: Timestamp Fivetran last wrote this row.
+
+        # Freshness is deliberately left off. The lab data is static, so a
+        # freshness check would fail for everyone by design.
+
+  - name: healthcare_raw
+    description: >
+      Raw healthcare clinical-decision records landed in Snowflake by
+      Fivetran from the Google Cloud SQL for PostgreSQL `industry` database,
+      schema `healthcare`. Nothing in this schema is edited by hand.
+
+      One source table. Patient-level treatment, outcome and cost data.
+      GOVERNANCE NOTE: this table carries genuine protected health
+      information shape (diagnosis, medical history, genetic data, lab
+      results). Treat it with at least the seriousness the financial
+      services track gives `loan`. See stg_cds_records.sql for what staging
+      does about it.
+    database: "{{ var('source_database') }}"
+    schema: "{{ var('healthcare_source_schema') }}"
+
+    tables:
+      - name: cds_records
+        description: >
+          One row per patient clinical-decision record. Row count not yet
+          confirmed against this copy; introspect before the event.
+        columns:
+          - name: record_id
+            description: Primary key.
+          - name: patient_id
+            description: Patient identifier. Same governance note as pharma_raw.patient_id.
+          - name: diagnosis
+            description: >
+              PHI-shaped. Primary diagnosis, e.g. Kidney Disease, Stroke,
+              Asthma, Diabetes, Heart Disease, Cancer, Arthritis, COPD.
+          - name: medical_conditions
+            description: PHI-shaped. Active medical conditions being treated.
+          - name: medical_history
+            description: PHI-shaped free text. Not exposed by staging.
+          - name: family_medical_history
+            description: PHI-shaped free text. Not exposed by staging.
+          - name: allergies
+            description: PHI-shaped free text. Not exposed by staging.
+          - name: vital_signs
+            description: PHI-shaped. Not exposed by staging.
+          - name: genetic_data
+            description: PHI-shaped. Not exposed by staging.
+          - name: lab_results
+            description: PHI-shaped free text. Not exposed by staging.
+          - name: current_medications
+            description: PHI-shaped free text. Not exposed by staging.
+          - name: medication_adherence
+            description: Adherent, Partially Adherent, or Non-Adherent.
+          - name: medication_recommendation
+            description: PHI-shaped free text. Not exposed by staging.
+          - name: medication_side_effects
+            description: PHI-shaped free text. Not exposed by staging.
+          - name: treatment_plan
+            description: PHI-shaped free text. Not exposed by staging.
+          - name: treatment_recommendation
+            description: PHI-shaped free text. Not exposed by staging.
+          - name: treatment_outcome
+            description: Successful, Partially Successful, Unsuccessful, or Ongoing.
+          - name: patient_satisfaction
+            description: Satisfied, Neutral, or Unsatisfied.
+          - name: readmission_risk
+            description: Predicted probability of readmission, 0 to 1.
+          - name: patient_outcome_score
+            description: Treatment outcome quality, 0 to 1.
+          - name: cost_of_care
+            description: Total cost of patient care in dollars.
+          - name: medication_cost
+            description: Cost of medications prescribed.
+          - name: total_cost_savings
+            description: Estimated cost savings from clinical decision support interventions.
+          - name: medical_error_rate
+            description: Rate of medical errors, 0 to 1.
+          - name: length_of_stay
+            description: Number of days the patient stayed in care.
+          - name: clinical_trial_id
+            description: >
+              Free-text link back to a pharma trial, not a foreign key
+              enforced anywhere. Do not join this to pharma_raw as though it
+              were one: the two subject areas share no verified key.
+          - name: trial_name
+            description: Free text, not the same controlled list as pharma_raw.trial_name.
+          - name: trial_status
+            description: Free text, not the same controlled list as pharma_raw.trial_status.
+          - name: medical_publication_id
+            description: Identifier for an associated publication, if any.
+          - name: publication_title
+            description: PHI-adjacent free text. Not exposed by staging.
+          - name: publication_date
+            description: TEXT in the source; cast in staging.
+          - name: _fivetran_synced
+            description: Timestamp Fivetran last wrote this row.
+
+        # Freshness is deliberately left off. The lab data is static, so a
+        # freshness check would fail for everyone by design.

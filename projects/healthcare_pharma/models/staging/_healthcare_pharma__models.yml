@@ -1,0 +1,186 @@
+version: 2
+
+# ---------------------------------------------------------------------------
+# Tests below are deliberately conservative: not_null and structurally-bounded
+# ranges (probabilities in 0-1, percentages in 0-100) only. accepted_values
+# lists and any range that depends on what the real data actually contains
+# are commented out with a TODO. Fill them in from a live `select distinct`
+# / `select min/max` against this track's own Fivetran-landed copy before the
+# event (docs/adding-an-industry.md Step 1) -- a guessed list fails at
+# checkpoint 1 and blocks the room, exactly as that doc warns.
+# ---------------------------------------------------------------------------
+
+models:
+
+  # ===========================================================================
+  # PHARMA: clinical trials
+  # ===========================================================================
+  - name: stg_phr_records
+    description: >
+      One row per patient enrollment in a clinical trial. Row count not yet
+      confirmed against this copy.
+    columns:
+
+      - name: record_id
+        description: Primary key.
+        data_tests:
+          - unique
+          - not_null
+
+      - name: trial_id
+        description: Identifier for the trial.
+        data_tests:
+          - not_null
+
+      - name: patient_id
+        description: Trial-subject identifier. Not a name; see the source yml governance note.
+        data_tests:
+          - not_null
+
+      - name: disease_area
+        description: >
+          Medical specialty. TODO: confirm the full value list with
+          `select distinct disease_area` before adding accepted_values.
+        data_tests:
+          - not_null
+
+      - name: trial_status
+        description: >
+          TODO: confirm the full value list before adding accepted_values.
+          A wrong guess here is checkpoint-1-breaking.
+        data_tests:
+          - not_null
+
+      - name: regulatory_approval_status
+        description: >
+          TODO: confirm the full value list before adding accepted_values.
+        data_tests:
+          - not_null
+
+      - name: patient_age
+        description: Age of the patient at enrollment.
+        data_tests:
+          - not_null
+
+      - name: enrollment_date
+        description: Date the patient enrolled, cast from the raw VARCHAR.
+        data_tests:
+          - not_null
+
+      - name: enrollment_rate
+        description: >
+          Percentage of target patients enrolled. Bounded 0-100 by
+          definition; not yet confirmed the source has no sentinel values
+          (see the FS track's `999` age sentinel for why this matters).
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                max_value: 100
+                inclusive: true
+
+      - name: dropout_rate
+        description: Percentage of enrolled patients who discontinued. Bounded 0-100 by definition.
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                max_value: 100
+                inclusive: true
+
+  # ===========================================================================
+  # HEALTHCARE: clinical decisions
+  # ===========================================================================
+  - name: stg_cds_records
+    description: >
+      One row per patient clinical-decision record. Row count not yet
+      confirmed against this copy. Eleven PHI-shaped free-text columns are
+      excluded; see the governance note at the top of the model file.
+    columns:
+
+      - name: record_id
+        description: Primary key.
+        data_tests:
+          - unique
+          - not_null
+
+      - name: patient_id
+        description: Patient identifier. Not a name; see the source yml governance note.
+        data_tests:
+          - not_null
+
+      - name: diagnosis
+        description: >
+          Primary diagnosis category. TODO: confirm the full value list
+          before adding accepted_values.
+        data_tests:
+          - not_null
+
+      - name: medication_adherence
+        description: >
+          TODO: confirm the full value list (expected shape: Adherent,
+          Partially Adherent, Non-Adherent) before adding accepted_values.
+        data_tests:
+          - not_null
+
+      - name: treatment_outcome
+        description: >
+          TODO: confirm the full value list (expected shape: Successful,
+          Partially Successful, Unsuccessful, Ongoing) before adding
+          accepted_values.
+        data_tests:
+          - not_null
+
+      - name: patient_satisfaction
+        description: >
+          TODO: confirm the full value list (expected shape: Satisfied,
+          Neutral, Unsatisfied) before adding accepted_values.
+        data_tests:
+          - not_null
+
+      - name: readmission_risk
+        description: Predicted probability of readmission. Bounded 0-1 by definition.
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                max_value: 1
+                inclusive: true
+
+      - name: patient_outcome_score
+        description: Treatment outcome quality. Bounded 0-1 by definition.
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                max_value: 1
+                inclusive: true
+
+      - name: medical_error_rate
+        description: Rate of medical errors. Bounded 0-1 by definition.
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                max_value: 1
+                inclusive: true
+
+      - name: length_of_stay
+        description: Number of days the patient stayed in care.
+        data_tests:
+          - not_null
+
+      - name: cost_of_care
+        description: Total cost of patient care in dollars.
+        data_tests:
+          - not_null
+
+      - name: medication_cost
+        description: Cost of medications prescribed.
+        data_tests:
+          - not_null

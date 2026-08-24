@@ -1,0 +1,500 @@
+version: 2
+
+models:
+
+  # ===========================================================================
+  # hcp_clinical_trials
+  #
+  # ENFORCED CONTRACT. dbt builds an empty table from the column list below,
+  # compares it against what the model actually produces, and refuses to
+  # build if they differ.
+  # ===========================================================================
+  - name: hcp_clinical_trials
+    description: >
+      The pharma headline mart of the healthcare, pharma and life sciences track. One row per patient enrollment in a clinical trial. Row count not yet confirmed against this copy.
+    config:
+      contract:
+        enforced: true
+    columns:
+
+      - name: record_id
+        data_type: varchar
+        description: Primary key.
+        constraints:
+          - type: not_null
+        data_tests:
+          - unique
+          - not_null
+
+        entity:
+          type: primary
+          name: trial_enrollment
+      - name: trial_id
+        data_type: varchar
+        description: Identifier for the trial.
+        constraints:
+          - type: not_null
+        data_tests:
+          - not_null
+
+        entity:
+          type: foreign
+          name: trial
+      - name: protocol_id
+        data_type: varchar
+        description: Identifier for the trial protocol.
+
+      - name: patient_id
+        data_type: varchar
+        description: Trial-subject identifier. Not a name; see stg_phr_records.sql.
+
+        entity:
+          type: foreign
+          name: patient
+      - name: site_id
+        data_type: varchar
+        description: Identifier for the trial site.
+
+      - name: enrollment_date
+        data_type: date
+        description: Date the patient enrolled.
+        data_tests:
+          - not_null
+
+        dimension:
+          type: time
+        granularity: day
+      - name: trial_name
+        data_type: varchar
+        description: Therapeutic category.
+
+        dimension:
+          type: categorical
+      - name: sponsor_name
+        data_type: varchar
+        description: Organization sponsoring the trial.
+
+        dimension:
+          type: categorical
+      - name: disease_area
+        data_type: varchar
+        description: Medical specialty the trial addresses.
+
+        dimension:
+          type: categorical
+      - name: site_name
+        data_type: varchar
+        description: Type of facility conducting the trial.
+
+        dimension:
+          type: categorical
+      - name: trial_status
+        data_type: varchar
+        description: Current operational status of the trial.
+
+        dimension:
+          type: categorical
+      - name: regulatory_approval_status
+        data_type: varchar
+        description: Regulatory review status.
+
+        dimension:
+          type: categorical
+      - name: patient_age
+        data_type: number(38,0)
+        description: Age of the patient at enrollment.
+
+      - name: patient_gender
+        data_type: varchar
+        description: Patient gender.
+
+        dimension:
+          type: categorical
+      - name: age_group
+        data_type: varchar
+        description: Patient age banded into 18-30, 31-45, 46-60, 61-80 or Other.
+        # HOL_BUG_HCP_01: missing the 61-80 bucket, which is real data (patient_age
+        # supports it, see int_hcp_trials_enriched.sql), not a value that cannot occur.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['18-30', '31-45', '46-60', 'Other']
+
+        dimension:
+          type: categorical
+      - name: protocol_amendment_date
+        data_type: date
+        description: Date of the most recent protocol amendment.
+
+      - name: days_since_enrollment
+        data_type: number(38,0)
+        description: Days from enrollment to today.
+
+      - name: days_to_amendment
+        data_type: number(38,0)
+        description: >
+          Days between enrollment and the most recent protocol amendment.
+          Negative values mean the amendment happened before enrollment.
+
+      - name: enrollment_rate
+        data_type: number(9,2)
+        description: Percentage of target patients enrolled, 0 to 100.
+        data_tests:
+          - not_null
+
+      - name: dropout_rate
+        data_type: number(9,2)
+        description: Percentage of enrolled patients who discontinued, 0 to 100.
+        data_tests:
+          - not_null
+
+      - name: trial_risk_score
+        data_type: number(9,2)
+        description: >
+          Composite risk score, 0-100. Weighted from dropout rate, inverse
+          enrollment rate, and a trial-status penalty. Real observed range not
+          yet confirmed against this copy; verify before trusting the range
+          test below in front of a room.
+        # HOL_BUG_HCP_02: max_value is set well below what the formula can
+        # produce (dropout_rate * 0.5 alone can reach 50), so this test fails
+        # on real, correct data rather than catching a real error.
+        data_tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                max_value: 15
+                inclusive: true
+
+      - name: is_at_risk
+        data_type: boolean
+        description: True when dropout is over 40%, enrollment is under 30%, and the trial is still notionally active.
+        data_tests:
+          - not_null
+
+    semantic_model:
+      enabled: true
+      name: hcp_clinical_trials
+    agg_time_dimension: enrollment_date
+    metrics:
+      - name: average_trial_risk_score
+        label: Average trial risk score
+        description: Average trial risk score across enrollments, 0 to 100.
+        type: simple
+        agg: average
+        expr: trial_risk_score
+      - name: average_enrollment_rate
+        label: Average enrollment rate
+        description: Average enrollment rate across trials, 0 to 100.
+        type: simple
+        agg: average
+        expr: enrollment_rate
+      - name: average_dropout_rate
+        label: Average dropout rate
+        description: Average dropout rate across trials, 0 to 100.
+        type: simple
+        agg: average
+        expr: dropout_rate
+      - name: enrollment_count
+        label: Enrollment count
+        description: Number of patient enrollments.
+        type: simple
+        agg: count
+        expr: record_id
+      - name: at_risk_count
+        label: At-risk enrollment count
+        description: Enrollments flagged as at risk.
+        type: simple
+        agg: sum
+        expr: case when is_at_risk then 1 else 0 end
+      - name: at_risk_rate
+        label: At-risk rate
+        description: Share of enrollments flagged as at risk, 0 to 1.
+        type: ratio
+        numerator: at_risk_count
+        denominator: enrollment_count
+
+  # ===========================================================================
+  # hcp_clinical_decisions
+  #
+  # ENFORCED CONTRACT, and the governance beat of this track: eleven PHI-shaped
+  # free-text source columns do not appear here, on purpose. See
+  # stg_cds_records.sql.
+  # ===========================================================================
+  - name: hcp_clinical_decisions
+    description: >
+      The healthcare second mart of the healthcare, pharma and life sciences track. One row per patient clinical-decision record. Contains no PHI free text.
+    config:
+      contract:
+        enforced: true
+    columns:
+
+      - name: record_id
+        data_type: varchar
+        description: Primary key.
+        constraints:
+          - type: not_null
+        data_tests:
+          - unique
+          - not_null
+
+        entity:
+          type: primary
+          name: clinical_decision
+      - name: patient_id
+        data_type: varchar
+        description: Patient identifier. Not a name; see stg_cds_records.sql.
+
+        entity:
+          type: foreign
+          name: patient
+      - name: as_of_date
+        data_type: date
+        description: >
+          Snapshot date every row carries. The source has no per-decision
+          date; this is the honest time dimension for a snapshot mart, same
+          move the financial services track makes with as_of_date.
+        data_tests:
+          - not_null
+
+        dimension:
+          type: time
+        granularity: day
+      - name: diagnosis
+        data_type: varchar
+        description: Primary diagnosis category.
+
+        dimension:
+          type: categorical
+      - name: medical_conditions
+        data_type: varchar
+        description: Active medical conditions being treated.
+
+        dimension:
+          type: categorical
+      - name: medication_adherence
+        data_type: varchar
+        description: Patient medication compliance category.
+
+        dimension:
+          type: categorical
+      - name: treatment_outcome
+        data_type: varchar
+        description: Result of treatment.
+
+        dimension:
+          type: categorical
+      - name: patient_satisfaction
+        data_type: varchar
+        description: Patient satisfaction category.
+
+        dimension:
+          type: categorical
+      - name: readmission_risk
+        data_type: number(9,4)
+        description: Predicted probability of readmission, 0 to 1.
+        data_tests:
+          - not_null
+
+      - name: readmission_risk_level
+        data_type: varchar
+        description: Low, Medium or High, banded from readmission_risk.
+        # HOL_BUG_HCP_03: missing 'Medium', which int_hcp_decisions_enriched.sql
+        # produces for readmission_risk between 0.3 and 0.6.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['Low', 'High']
+
+        dimension:
+          type: categorical
+      - name: patient_outcome_score
+        data_type: number(9,4)
+        description: Treatment outcome quality, 0 to 1.
+        data_tests:
+          - not_null
+
+      - name: outcome_quality
+        data_type: varchar
+        description: Good, Fair or Poor, banded from patient_outcome_score.
+        # HOL_BUG_HCP_04: missing 'Poor', which int_hcp_decisions_enriched.sql
+        # produces for patient_outcome_score under 0.4.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['Good', 'Fair']
+
+        dimension:
+          type: categorical
+      - name: medical_error_rate
+        data_type: number(9,4)
+        description: Rate of medical errors, 0 to 1.
+
+      - name: length_of_stay
+        data_type: number(38,0)
+        description: Number of days the patient stayed in care.
+
+      - name: stay_category
+        data_type: varchar
+        description: Short, Medium or Long, banded from length_of_stay.
+
+        dimension:
+          type: categorical
+      - name: cost_of_care
+        data_type: number(18,2)
+        description: Total cost of patient care in dollars.
+        data_tests:
+          - not_null
+
+      - name: medication_cost
+        data_type: number(18,2)
+        description: Cost of medications prescribed.
+
+      - name: total_treatment_cost
+        data_type: number(18,2)
+        description: Cost of care plus medication cost.
+
+      - name: total_cost_savings
+        data_type: number(18,2)
+        description: Estimated cost savings from clinical decision support interventions.
+
+      - name: cost_efficiency
+        data_type: number(9,4)
+        description: Ratio of cost savings to total treatment cost. Null when total treatment cost is zero.
+
+      - name: clinical_trial_id
+        data_type: varchar
+        description: >
+          Free-text link back to a pharma trial. Informational only, not an
+          enforced foreign key: the two subject areas share no verified key.
+
+      - name: trial_name
+        data_type: varchar
+        description: Free text, not the same controlled list as hcp_clinical_trials.trial_name.
+
+      - name: trial_status
+        data_type: varchar
+        description: Free text, not the same controlled list as hcp_clinical_trials.trial_status.
+
+      - name: publication_date
+        data_type: date
+        description: Date of an associated clinical publication, if any. Sparse; not the semantic model's time dimension.
+
+      - name: needs_review
+        data_type: boolean
+        description: True when readmission risk is over 0.5 and either adherence is poor or the error rate is elevated.
+        data_tests:
+          - not_null
+
+    semantic_model:
+      enabled: true
+      name: hcp_clinical_decisions
+    agg_time_dimension: as_of_date
+    metrics:
+      - name: average_readmission_risk
+        label: Average readmission risk
+        description: Average predicted readmission risk, 0 to 1.
+        type: simple
+        agg: average
+        expr: readmission_risk
+      - name: average_outcome_score
+        label: Average outcome score
+        description: Average treatment outcome quality, 0 to 1.
+        type: simple
+        agg: average
+        expr: patient_outcome_score
+      - name: average_medical_error_rate
+        label: Average medical error rate
+        description: Average rate of medical errors, 0 to 1.
+        type: simple
+        agg: average
+        expr: medical_error_rate
+      - name: total_treatment_cost
+        label: Total treatment cost
+        description: Total treatment cost in dollars.
+        type: simple
+        agg: sum
+        expr: total_treatment_cost
+      - name: average_cost_efficiency
+        label: Average cost efficiency
+        description: Average ratio of cost savings to total treatment cost.
+        type: simple
+        agg: average
+        expr: cost_efficiency
+      - name: decision_count
+        label: Decision count
+        description: Number of clinical-decision records.
+        type: simple
+        agg: count
+        expr: record_id
+      - name: needs_review_count
+        label: Needs review count
+        description: Cases flagged for clinical review.
+        type: simple
+        agg: sum
+        expr: case when needs_review then 1 else 0 end
+      - name: needs_review_rate
+        label: Needs review rate
+        description: Share of cases flagged for clinical review, 0 to 1.
+        type: ratio
+        numerator: needs_review_count
+        denominator: decision_count
+
+  # ===========================================================================
+  # vw_hcp_data_quality
+  #
+  # No contract here on purpose. This is the model the lab edits live during
+  # the dbt Studio and Fusion tour.
+  # ===========================================================================
+  - name: vw_hcp_data_quality
+    description: >
+      Data-quality scorecard, one row per subject area. Scores completeness,
+      validity and consistency out of 100 across the clinical trials and
+      clinical decisions subject areas.
+    columns:
+
+      - name: data_domain
+        description: Which subject area the row scores.
+        data_tests:
+          - unique
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - 'Clinical trials'
+                  - 'Clinical decisions'
+
+      - name: total_rows
+        description: Rows examined in the domain.
+
+      - name: completeness_score
+        description: Are the fields we need populated? 0 to 100.
+
+      - name: validity_score
+        description: Are values inside the range the business expects? 0 to 100.
+
+      - name: consistency_score
+        description: Do fields that should agree with each other agree? 0 to 100.
+
+      - name: data_quality_score
+        description: Simple average of the three dimension scores.
+
+      - name: data_quality_grade
+        description: A, B, C or D.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['A', 'B', 'C', 'D']
+
+  # ===========================================================================
+  # Semantic views
+  # ===========================================================================
+  - name: sv_hcp_clinical_trials
+    description: >
+      Snowflake Semantic View over the pharma clinical trials mart. Read by
+      Cortex Analyst and Snowflake Intelligence. Contains no PHI free text.
+
+  - name: sv_hcp_clinical_decisions
+    description: >
+      Snowflake Semantic View over the healthcare clinical decisions mart.
+      Read by Cortex Analyst and Snowflake Intelligence. Contains no PHI free
+      text.
