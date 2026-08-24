@@ -1,0 +1,75 @@
+# ---------------------------------------------------------------------------
+# <TRACK NAME> track  --  SKELETON, COPY AND ADAPT
+#
+# To create a new industry track:
+#   cp -r projects/_template projects/<track_key>
+# then work through every <ANGLE_BRACKET> placeholder in this folder.
+#
+# Find everything you still have to fill in:
+#   grep -rn "FILL ME\|<track_key>\|<TRACK" projects/<track_key>/
+#
+# Full walkthrough: docs/adding-an-industry.md
+# ---------------------------------------------------------------------------
+
+name: 'hol_<track_key>'
+version: '1.0.0'
+profile: 'snowflake_hol'
+
+# Fusion-conformant: no config-version key, and a minimum version floor.
+require-dbt-version: [">=1.9.0"]
+
+model-paths: ["models"]
+seed-paths: ["seeds"]
+test-paths: ["tests"]
+macro-paths: ["macros"]
+
+target-path: "target"
+clean-targets: ["target", "dbt_packages"]
+
+# Leave these off unless the Fivetran destination lands quoted lowercase
+# identifiers. See snowflake/GOTCHAS.md section 3.
+quoting:
+  database: false
+  schema: false
+  identifier: false
+
+vars:
+  # ---- TRACK IDENTITY -----------------------------------------------------
+  # FILL ME. This block is the only per-track configuration in the project.
+  # Everything else reads from it.
+  track_key: 'automotive_transport'
+  track_name: 'Automotive & transport'
+  track_description: >
+    NOT YET BUILT. See README.md. The source database's only unused schema
+    that fits this vertical is `transportation`; no automotive-specific
+    schema exists. The business question, marts and Semantic View below
+    depend on introspecting that schema first, per
+    docs/adding-an-industry.md Step 1, which has not happened.
+
+  # ---- WHERE YOUR RAW DATA LIVES ------------------------------------------
+  source_database: 'HOL_SNOWFLAKE_INDUSTRY'
+
+  # >>> EDIT THIS ONE LINE <<<
+  # NOT YET BUILT: no instructor fallback data exists for this schema yet.
+  source_schema: 'hicham_bab_transportation'
+
+models:
+  hol_<track_key>:
+    +materialized: view
+    staging:
+      +tags: ['staging']
+    intermediate:
+      +tags: ['intermediate']
+    marts:
+      +materialized: table
+      +tags: ['marts']
+
+# Uncomment only if the track has a seed. Pin column types rather than letting
+# them be inferred: marts have enforced contracts, and a seed column that
+# silently loads as VARCHAR instead of BOOLEAN will break them.
+#
+# seeds:
+#   hol_<track_key>:
+#     <seed_name>:
+#       +column_types:
+#         <column>: varchar

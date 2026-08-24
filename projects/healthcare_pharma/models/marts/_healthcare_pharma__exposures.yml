@@ -1,0 +1,25 @@
+version: 2
+
+exposures:
+  - name: hcp_trial_and_outcomes_dashboard
+    label: Trial and outcomes dashboard (Streamlit in Snowflake)
+    type: application
+    maturity: medium
+    url: "{{ var('streamlit_app_url', 'see ../../../snowflake/streamlit_apps/healthcare_pharma_app_setup.md') }}"
+    description: >
+      Streamlit-in-Snowflake app reading hcp_clinical_trials and
+      hcp_clinical_decisions directly. Declared here so the app shows up in
+      the dbt DAG and dbt Catalog's lineage graph next to
+      sv_hcp_clinical_trials and sv_hcp_clinical_decisions, the two Semantic
+      Views the HOL_HCP_ANALYST Cortex Agent reads. Same governed marts, two
+      consumers: one AI, one human. Neither can see the PHI free text
+      excluded in stg_cds_records.sql, because it was never loaded upstream.
+
+      Setup: ../../../snowflake/streamlit_apps/healthcare_pharma_app_setup.md
+      App source: ../../streamlit_app/streamlit_app.py
+    depends_on:
+      - ref('hcp_clinical_trials')
+      - ref('hcp_clinical_decisions')
+    owner:
+      name: Facilitator
+      email: hicham.babahmed@dbtlabs.com

@@ -1,0 +1,23 @@
+version: 2
+
+exposures:
+  - name: fs_credit_risk_dashboard
+    label: Credit risk dashboard (Streamlit in Snowflake)
+    type: application
+    maturity: medium
+    url: "{{ var('streamlit_app_url', 'see ../../../snowflake/streamlit_apps/financial_services_app_setup.md') }}"
+    description: >
+      Streamlit-in-Snowflake app reading fs_risk_relationship_summary and
+      fs_monthly_risk_assessment directly. Declared here so the app shows up
+      in the dbt DAG and dbt Catalog's lineage graph next to
+      sv_fs_credit_risk, the Semantic View the HOL_FS_ANALYST Cortex Agent
+      reads. Same governed marts, two consumers: one AI, one human.
+
+      Setup: ../../../snowflake/streamlit_apps/financial_services_app_setup.md
+      App source: ../../streamlit_app/streamlit_app.py
+    depends_on:
+      - ref('fs_risk_relationship_summary')
+      - ref('fs_monthly_risk_assessment')
+    owner:
+      name: Facilitator
+      email: hicham.babahmed@dbtlabs.com

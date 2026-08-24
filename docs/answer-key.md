@@ -399,6 +399,129 @@ or `dbt build --select tag:stretch`.
 
 ---
 
+## Healthcare, pharma & life sciences
+
+All four surface in wave 1. Unlike the other three tracks, all four sit in
+mart-test config (`accepted_values` / `dbt_utils.accepted_range`) rather than
+being spread across intermediate SQL, mart SQL, mart test and mart contract.
+That is a deliberate, documented deviation: the `healthcare` and `pharma`
+schemas have not yet been introspected against a live Fivetran-landed copy
+(see `projects/healthcare_pharma/README.md`), so a wrong-column-name or
+contract-mismatch bug could not be safely hand-verified the way the other
+three tracks' bugs were. Once that introspection and a live dry run are done,
+swap one or two of these for a data-dependent bug for variety, following the
+same before/after shape as the other tracks.
+
+### HOL_BUG_HCP_01
+
+| | |
+|---|---|
+| **File** | `projects/healthcare_pharma/models/marts/_healthcare_pharma__marts.yml`, `hcp_clinical_trials` → `age_group` |
+| **Layer** | mart test |
+| **Wave** | 1 |
+| **Symptom** | `FAIL ... accepted_values_hcp_clinical_trials_age_group...` |
+| **Blocks** | nothing |
+
+**Cause.** The `values` list has three buckets. `int_hcp_trials_enriched`
+derives four: `61-80` is missing, even though `patient_age` supports it.
+
+**Fix.** Add `'61-80'` to the list.
+
+**Wizard prompt:**
+> The accepted_values test on age_group fails. Find which bucket is missing
+> from the test and check the model that derives it before deciding.
+
+**Teaching point.** Same shape as FS_03 and ENERGY_03: the test and the
+`CASE` statement that produces the values drifted apart. Worth naming that
+this is the third track using the same lesson, in case an attendee has done
+more than one track over multiple sessions.
+
+---
+
+### HOL_BUG_HCP_02
+
+| | |
+|---|---|
+| **File** | `projects/healthcare_pharma/models/marts/_healthcare_pharma__marts.yml`, `hcp_clinical_trials` → `trial_risk_score` |
+| **Layer** | mart test |
+| **Wave** | 1 |
+| **Symptom** | `FAIL ... dbt_utils_accepted_range_hcp_clinical_trials_trial_risk_score...` |
+| **Blocks** | nothing |
+
+**Cause.** `max_value: 15`. The score is `(dropout_rate * 0.5) +
+((100 - enrollment_rate) * 0.3) + a 0/10/20 status penalty`, which can reach
+well above 15 on real data (dropout rate alone contributes up to 50).
+
+**Fix.** Raise `max_value` to `100` (the score's theoretical ceiling), or to
+whatever the real observed maximum turns out to be once introspected.
+
+**THIS ONE HAS A WRONG FIX THAT COMPILES.** Deleting the `dbt_utils.accepted_range`
+test entirely also makes the build go green, and silences the one test that
+would ever have flagged a real trial risk score calculation going out of
+bounds.
+
+**Wizard prompt:**
+> The accepted_range test on trial_risk_score fails for real data. Work out
+> the formula's actual possible range from the model that computes it, then
+> fix the threshold rather than removing the test.
+
+**Teaching point.** Same lesson as CPG_03, in the other direction: here the
+threshold was set too low rather than too high, but the fix is still "correct
+the number, do not delete the check."
+
+---
+
+### HOL_BUG_HCP_03
+
+| | |
+|---|---|
+| **File** | `projects/healthcare_pharma/models/marts/_healthcare_pharma__marts.yml`, `hcp_clinical_decisions` → `readmission_risk_level` |
+| **Layer** | mart test |
+| **Wave** | 1 |
+| **Symptom** | `FAIL ... accepted_values_hcp_clinical_decisions_readmission_risk_level...` |
+| **Blocks** | nothing |
+
+**Cause.** The `values` list has `Low` and `High` only. `int_hcp_decisions_enriched`
+also derives `Medium` for `readmission_risk` between 0.3 and 0.6.
+
+**Fix.** Add `'Medium'` to the list.
+
+**Wizard prompt:**
+> The accepted_values test on readmission_risk_level fails. Find which value
+> is missing and check the CASE statement that derives it.
+
+**Teaching point.** Same lesson as HCP_01, on the healthcare side of the
+track rather than the pharma side, so both subject areas get one.
+
+---
+
+### HOL_BUG_HCP_04
+
+| | |
+|---|---|
+| **File** | `projects/healthcare_pharma/models/marts/_healthcare_pharma__marts.yml`, `hcp_clinical_decisions` → `outcome_quality` |
+| **Layer** | mart test |
+| **Wave** | 1 |
+| **Symptom** | `FAIL ... accepted_values_hcp_clinical_decisions_outcome_quality...` |
+| **Blocks** | nothing |
+
+**Cause.** The `values` list has `Good` and `Fair` only. `int_hcp_decisions_enriched`
+also derives `Poor` for `patient_outcome_score` under 0.4.
+
+**Fix.** Add `'Poor'` to the list.
+
+**Wizard prompt:**
+> The accepted_values test on outcome_quality fails. Find which value is
+> missing and check the CASE statement that derives it.
+
+**Teaching point.** Deliberately the same lesson a fourth time, in a track
+that otherwise has no contract-mismatch or wrong-column-name bug. If an
+attendee asks why every HCP bug looks similar, that is the honest answer:
+say so, and point at the README status section rather than pretending it was
+a design choice made for variety.
+
+---
+
 ## Quick reference
 
 | ID | File | Layer | Wave | One-line fix |
@@ -415,6 +538,10 @@ or `dbt build --select tag:stretch`.
 | FS_02 | `_financial_services__marts.yml` | contract | 1 | delete `emp_title` (!!) |
 | FS_03 | `_financial_services__marts.yml` | test | 1 | add `'Very High'` |
 | FS_04 | `fs_product_recommendations.sql` | mart | 1 | delete `customer_email` (!!) |
+| HCP_01 | `_healthcare_pharma__marts.yml` | test | 1 | add `'61-80'` |
+| HCP_02 | `_healthcare_pharma__marts.yml` | test | 1 | `max_value: 15` → `100` (!!) |
+| HCP_03 | `_healthcare_pharma__marts.yml` | test | 1 | add `'Medium'` |
+| HCP_04 | `_healthcare_pharma__marts.yml` | test | 1 | add `'Poor'` |
 
 (!!) = has a wrong fix that compiles. Slow down here.
 

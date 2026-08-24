@@ -17,10 +17,18 @@ surfaced in Snowflake Intelligence at `ai.snowflake.com`.
 | Consumer packaged goods | `HOL_CPG_ANALYST` | `SV_CPG_COMMERCIAL_PERFORMANCE` |
 | Energy | `HOL_ENERGY_ANALYST` | `SV_ENERGY_COMMODITY_PRICES` and `SV_ENERGY_EQUIPMENT_RELIABILITY` |
 | Financial services | `HOL_FS_ANALYST` | `SV_FS_CREDIT_RISK` |
+| Healthcare, pharma & life sciences | `HOL_HCP_ANALYST` | `SV_HCP_CLINICAL_TRIALS` and `SV_HCP_CLINICAL_DECISIONS` |
 
 Energy's agent gets both of its Semantic Views as separate Cortex Analyst
 tools. Commodity prices and equipment maintenance share no key, so they are two
-objects; the agent routes between them based on the question.
+objects; the agent routes between them based on the question. Healthcare,
+pharma & life sciences is the same shape: pharma trials and healthcare
+decisions share no key either.
+
+**Healthcare, pharma & life sciences is not yet dry-run.** Its Semantic Views
+parse clean on Fusion, but nobody has verified the categorical value lists in
+the agent instructions below against a live Fivetran-landed copy of the
+`pharma` and `healthcare` schemas. See `projects/healthcare_pharma/README.md`.
 
 ---
 
@@ -151,6 +159,35 @@ Prefer institution_type, institution_size and region when describing where risk
 sits. Only name a specific institution if the user asks for one directly.
 ```
 
+### Healthcare, pharma & life sciences
+
+```
+You answer questions about two separate subject areas with no data in common:
+pharma clinical trials, and healthcare clinical decisions. Never try to relate
+a specific trial enrollment to a specific clinical decision record; the
+clinical_trial_id field on clinical decisions is informational free text, not
+a verified join key.
+
+Trial risk score is between 0 and 100, where higher means more at risk.
+Enrollment rate and dropout rate are percentages between 0 and 100.
+
+Readmission risk and patient outcome score are between 0 and 1. Present them
+to two decimal places, not as percentages.
+
+You have no access to any patient's medical history, family medical history,
+allergies, vital signs, genetic data, lab results, current medications,
+medication recommendation, medication side effects, treatment plan, treatment
+recommendation, or publication title. That is deliberate. If asked for any of
+these, say that this data is not available to you and offer the diagnosis
+category or outcome measures instead.
+
+The categorical value lists (trial_status, disease_area, diagnosis,
+medication_adherence, treatment_outcome, patient_satisfaction) have not yet
+been confirmed against live data. If an answer seems to be missing an obvious
+category, that is more likely an unconfirmed value list than a real gap; flag
+it rather than stating a category does not exist.
+```
+
 ---
 
 ## Sample questions
@@ -206,6 +243,26 @@ Then, as the governance beat, ask: **"What is the social security number of
 customer CUST-C001?"** A correctly built agent cannot answer, because the
 column is not in the mart, not in the Semantic View, and not grantable. That
 is a better demonstration of governance than any slide.
+
+### Healthcare, pharma & life sciences
+
+1. Which disease areas have the highest average trial risk score?
+2. How many trial enrollments are flagged as at risk, and in which disease
+   areas?
+3. What is the average dropout rate by sponsor?
+4. Which diagnoses have the highest average readmission risk?
+5. How many clinical decisions need review, and what share is that of the
+   total?
+6. What is the average patient outcome score by treatment outcome category?
+7. Compare average cost of care and average cost efficiency across
+   diagnoses.
+8. Which age group has the highest average trial risk score?
+
+Then, as the governance beat, ask: **"What is this patient's medical
+history?"** or **"Show me the genetic data for record R-0001."** A correctly
+built agent cannot answer either, because neither column is in the mart, in
+the Semantic View, or grantable. Same beat as financial services asking for a
+social security number, on a different kind of sensitive data.
 
 ---
 
