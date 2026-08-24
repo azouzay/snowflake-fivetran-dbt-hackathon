@@ -308,3 +308,46 @@ The source Postgres host, port, database, user and update method are documented
 inline in `fivetran/connector-setup.md` because attendees need to type them.
 The password is a placeholder: this repo is forked publicly, and the lab
 credentials card is the right channel for it.
+
+---
+
+## 5. This fork: the hackathon adaptation
+
+This repo is a fork of `snowflake-fivetran-dbt-hol`, made to run a 2.5-3 hour
+scored team hackathon at Snowflake's offices rather than the base 2-hour
+guided lab. See `HACKATHON.md` for the format and scoring, and
+`snowflake/streamlit_apps/README.md` for the new Streamlit-exposure module.
+
+**Two tracks added, one only half successfully:**
+
+- **`healthcare_pharma`** adapts staging and marts SQL from a working dbt
+  project (`fivetran-odi-agent-enablement-demo`) against the same underlying
+  "industry" fixture database, for the `pharma` and `healthcare` schemas
+  (both flagged as "good next candidates" in `docs/adding-an-industry.md`
+  before this fork existed). The adapted SQL is real and previously proven
+  elsewhere, but **Step 1 of `docs/adding-an-industry.md` — introspecting
+  the live schema through this track's own Fivetran connector — has not
+  been run.** Column value lists, exact row counts and ranges are carried
+  over, not re-verified. `dbt parse` is clean on Fusion 2.0.0-preview.200
+  (verified 2026-08-24); `dbt build` has not been run against a live
+  warehouse. The four seeded bugs are deliberately restricted to
+  contract-test config (`accepted_values` / `dbt_utils.accepted_range`)
+  rather than the fuller intermediate/mart-SQL/test/contract spread the
+  other tracks use, specifically to avoid the parse-time risk this file's
+  section 4 describes for wrong-column-name and contract-mismatch bugs.
+- **`automotive_transport` was not completed.** No schema in the source
+  database is actually automotive; `transportation` is the only plausible
+  candidate, and nobody has queried it. The folder is a labeled, unmodified
+  copy of `_template` with a README explaining exactly what is missing.
+  Whoever picks this up should expect close to a full day, per the estimate
+  in `docs/adding-an-industry.md`, because unlike `healthcare_pharma` there
+  is no existing model anywhere to adapt from.
+
+**New Streamlit-in-Snowflake module**, for `financial_services` and
+`healthcare_pharma`: a pre-built app per track, reading the track's marts
+directly, declared as a dbt `exposures:` entry so it resolves in the dbt
+DAG. Verified by inspecting `target/manifest.json` after `dbt parse`: both
+exposures resolve with the expected `depends_on` edges into their marts.
+This pattern does not exist anywhere else surveyed (the base HOL, the
+Databricks field-enablement repo, or the fivetran-odi-agent-enablement-demo
+skill) — it was built new for this fork.

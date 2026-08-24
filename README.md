@@ -1,7 +1,15 @@
-# Fivetran, Snowflake and dbt: a two-hour hands-on lab
+# Fivetran, Snowflake and dbt: a hackathon at Snowflake's offices
+
+**This is a fork of [snowflake-fivetran-dbt-hol](https://github.com/hicham-bab/snowflake-fivetran-dbt-hol),**
+adapted for a 2.5-3 hour scored team hackathon rather than a 2-hour guided
+lab. Format and scoring: [HACKATHON.md](HACKATHON.md). Everything else below
+still applies; the underlying dbt/Fivetran/Snowflake mechanics did not
+change, only the framing and one new module (a Streamlit-in-Snowflake app
+per track, wired in as a dbt exposure — see
+[snowflake/streamlit_apps/README.md](snowflake/streamlit_apps/README.md)).
 
 Build the full modern data stack loop on your own data, in your own accounts,
-in two hours.
+in an afternoon.
 
 ```
 Fivetran          Snowflake       dbt platform        semantic layer         Snowflake
@@ -29,18 +37,21 @@ the original. You will connect the fork to dbt Studio in a few minutes.
 
 ### 2. Pick your industry
 
-You only do one. Pick the one closest to your day job, or the one that sounds
-most interesting. All three take the same time.
+For the hackathon, pick the track closest to your own business. For the
+plain lab, pick the one closest to your day job or the one that sounds most
+interesting.
 
 | Track | Folder | The story | Pick it if |
 |---|---|---|---|
 | **Consumer packaged goods** | [`projects/cpg`](projects/cpg) | Order and product performance: order value, customer lifetime value, stockout and overstock risk, price optimisation | You want the cleanest run. One source table, two marts, no surprises |
 | **Energy** | [`projects/energy`](projects/energy) | Commodity price history across 23 traded commodities, plus equipment reliability and maintenance economics | You like a reshaping problem. Wide-to-long unpivot, and two source feeds that are secretly the same data |
-| **Financial services** | [`projects/financial_services`](projects/financial_services) | Credit risk across 1,000 customers and 20 lending institutions: risk scores, fraud probability, exposure, approvals | You are comfortable with joins and want the hardest one. A five-table star, and real personal data to govern |
+| **Financial services, insurance & fintech** | [`projects/financial_services`](projects/financial_services) | Credit risk across 1,000 customers and 20 lending institutions: risk scores, fraud probability, exposure, approvals | You are comfortable with joins and want the hardest one. A five-table star, and real personal data to govern |
+| **Healthcare, pharma & life sciences** | [`projects/healthcare_pharma`](projects/healthcare_pharma) | Two subject areas: pharma clinical trial risk, and healthcare clinical decisions and outcomes | Your business is healthcare, pharma or life sciences, or you want two independent stories instead of one star. **Not yet dry-run against a live warehouse; see the track README** |
+| **Automotive & transport** | [`projects/automotive_transport`](projects/automotive_transport) | Not yet built | Do not pick this one yet. See the track README for what is missing |
 
 New to dbt? Take **consumer packaged goods** or **energy**. Both finish
-comfortably. Financial services is the same length but the data works harder to
-trip you up.
+comfortably. Financial services and healthcare/pharma are the same length but
+the data works harder to trip you up.
 
 > ### Whichever track you pick, you must tell the dbt platform about it
 >
@@ -54,7 +65,9 @@ trip you up.
 > |---|---|
 > | Consumer packaged goods | `projects/cpg` |
 > | Energy | `projects/energy` |
-> | Financial services | `projects/financial_services` |
+> | Financial services, insurance & fintech | `projects/financial_services` |
+> | Healthcare, pharma & life sciences | `projects/healthcare_pharma` |
+> | Automotive & transport | `projects/automotive_transport` (not yet built) |
 >
 > Leave it blank and dbt looks in the repo root, finds no `dbt_project.yml`,
 > and nothing works. This is the single most common setup mistake in the lab.
@@ -80,7 +93,9 @@ a fallback.
 |---|---|
 | Consumer packaged goods | [docs/attendee-guide-cpg.md](docs/attendee-guide-cpg.md) |
 | Energy | [docs/attendee-guide-energy.md](docs/attendee-guide-energy.md) |
-| Financial services | [docs/attendee-guide-financial-services.md](docs/attendee-guide-financial-services.md) |
+| Financial services, insurance & fintech | [docs/attendee-guide-financial-services.md](docs/attendee-guide-financial-services.md) |
+| Healthcare, pharma & life sciences | not yet written; the track's own [README](projects/healthcare_pharma/README.md) is the orientation for now |
+| Automotive & transport | not yet built |
 
 Every section in those guides carries a minute budget. If you fall behind,
 each one also tells you how to skip ahead without breaking anything.
@@ -115,6 +130,10 @@ account never showed up, you are not stuck. Open your track's
 vars:
   source_schema: 'hicham_bab_consumer_packaged_goods'   # or _energy, or _financial_services
 ```
+
+Healthcare, pharma & life sciences reads two schemas instead of one, so it has
+two vars (`pharma_source_schema` and `healthcare_source_schema`) instead of
+`source_schema`; same fallback idea, just twice.
 
 That points at the instructor's copy of the same data. Everything downstream
 works identically. You can switch to your own schema later, or never. Nobody
@@ -169,19 +188,27 @@ guides are explicit about when you would reach for each.
 ├── snowflake/                   SETUP: store. Owned by the Snowflake team
 │   ├── GOTCHAS.md               the integration traps that break Fivetran-to-dbt labs
 │   ├── reference_setup.sql      minimal database, warehouse, roles and grants
-│   └── cortex_semantic/         reference Semantic View DDL and agent setup
+│   ├── cortex_semantic/         reference Semantic View DDL and agent setup
+│   └── streamlit_apps/          Streamlit-in-Snowflake app setup, one per track,
+│                                 new for the hackathon
 └── projects/
     ├── _template/               skeleton for adding a new industry
     ├── cpg/
     ├── energy/
-    └── financial_services/
+    ├── financial_services/
+    ├── healthcare_pharma/       new for the hackathon; not yet dry-run
+    └── automotive_transport/    new for the hackathon; NOT YET BUILT
 ```
 
-## Adding a fourth industry
+## Adding another industry
 
-The source database has 26 schemas; this lab uses three. Adding another is a
+The source database has 26 schemas; this fork uses four (five once
+automotive/transport is actually built). Adding another is a
 copy-paste-and-adapt job: see [docs/adding-an-industry.md](docs/adding-an-industry.md)
-and start from [`projects/_template`](projects/_template).
+and start from [`projects/_template`](projects/_template). Two of the four
+current tracks (`healthcare_pharma`, and `automotive_transport` once it
+exists) were added exactly this way, for this hackathon; their READMEs
+document what state each is actually in.
 
 ## Running the lab yourself
 
