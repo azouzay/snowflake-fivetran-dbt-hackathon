@@ -181,13 +181,14 @@ today. Sample questions are in
 This lands harder straight after Catalog, because they have just seen the
 metadata the agent is using.
 
-The dbt MCP Server half is currently a guided read-through rather than
-hands-on, because the direct registration into Snowflake CoWork does not
-work yet. The reason is specific and worth explaining rather than glossing:
-Snowflake's external MCP connectors require OAuth with a client secret and
-dbt's remote MCP issues public clients using PKCE. See
-[dbt-mcp-on-snowflake-cowork.md](dbt-mcp-on-snowflake-cowork.md), which also gives a
-path that does work if anyone wants to try it after.
+The dbt MCP Server half is now hands-on too: registering it directly as a
+Cortex Agent tool in Snowflake CoWork works, using OAuth Dynamic Client
+Registration on the dbt side (public beta) — Snowflake self-registers with
+PKCE, no client secret needed. See
+[dbt-mcp-on-snowflake-cowork.md](dbt-mcp-on-snowflake-cowork.md) section 3 for
+the SQL and prerequisites, and smoke-test it against your lab account before
+relying on it live. Section 4 of the same doc covers a non-Snowflake MCP
+client as a fallback if the account lacks a static subdomain.
 
 Financial services attendees should ask the agent for a customer's social
 security number. It cannot answer, because the column was never selected. That

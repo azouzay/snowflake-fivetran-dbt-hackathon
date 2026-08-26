@@ -333,8 +333,8 @@
     </div>
   </div>
   <div class="callout key" style="margin-top:16px">
-    <span class="lab">Why the dbt MCP path is a walkthrough (for now)</span>
-    Registering the dbt MCP Server <em>directly inside Snowflake CoWork</em> doesn't work yet: Snowflake's external MCP connectors require a confidential OAuth client with a secret, while dbt's remote MCP issues public clients using PKCE, and needs an <code>x-dbt-prod-environment-id</code> header Snowflake can't send. The dbt MCP Server works today in any MCP client (Claude Desktop, Cursor, VS Code); it's the in-Snowflake registration that's pending. Re-verify before each delivery.
+    <span class="lab">Registering the dbt MCP Server directly in Snowflake CoWork</span>
+    This now works: Snowflake supports OAuth Dynamic Client Registration for external MCP connectors, self-registering with PKCE, which matches the public client dbt's remote MCP already issues — no client secret needed on either side. OAuth on the dbt side is Beta and needs a static subdomain; the dbt MCP Server also works in any other MCP client (Claude Desktop, Cursor, VS Code) as a fallback. Re-verify against a live account before each delivery.
   </div>
 </section>
 
@@ -447,7 +447,7 @@ const steps = [
     <p>You should see these metrics come back:</p>
     <div class="tw-metrics"></div>
     <div class="callout key"><span class="lab">Your track's governance beat</span><span class="tw-beat"></span></div>
-    <div class="callout fb"><span class="lab">The dbt MCP half</span>Delivered as a guided read-through: direct registration into Snowflake CoWork doesn't work yet (Snowflake's external MCP connectors need a confidential OAuth client with a secret; dbt issues public clients using PKCE). It works today in any MCP client, see section 3 above.</div>`},
+    <div class="callout fb"><span class="lab">The dbt MCP half</span>Also hands-on now: register the dbt MCP Server directly as a Cortex Agent tool in Snowflake CoWork using OAuth Dynamic Client Registration (Snowflake self-registers with PKCE, no client secret needed). OAuth on the dbt side is Beta and needs a static subdomain; it also works in any other MCP client as a fallback, see section 3 above.</div>`},
 
   {clock:"1:55",min:5,title:"Wrap, pull request & next steps",body:`
     <p>Commit and open a pull request. Don't merge: the point is the change is <em>reviewable</em>, not that it ships. Look at what's in the diff, including the contract change.</p>

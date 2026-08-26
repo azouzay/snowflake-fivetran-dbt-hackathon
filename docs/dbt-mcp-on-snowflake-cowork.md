@@ -1,7 +1,9 @@
 # The dbt MCP Server and Snowflake CoWork
 
-**Read the compatibility note in section 3 before you start configuring
-anything.** It will save you an hour.
+**Read section 3 before you start configuring anything.** Direct registration
+inside Snowflake CoWork now works — it did not for most of this lab's life,
+and some of the language in this repo predates the fix. Section 3 covers what
+changed and what it needs.
 
 Verified against dbt and Snowflake documentation in August 2026. Both products
 are moving quickly. Re-check before each delivery, and anything marked
@@ -50,7 +52,7 @@ can put in front of a regulator and one you cannot.
 | Consumed by | Cortex Analyst, Snowflake CoWork | any MCP client |
 | Available to non-Snowflake tools | no | yes |
 | Change control | rebuild the dbt model | pull request on the YAML |
-| Status in this lab | **fully hands-on, works today** | see section 3 |
+| Status in this lab | **fully hands-on, works today** | **fully hands-on, OAuth is Beta — see section 3** |
 
 Neither is the winner. If everything you own is in Snowflake, the Semantic View
 is closer to the data and simpler. If a metric has to mean the same thing in
@@ -81,57 +83,91 @@ empty metric list and looks broken.
 
 ---
 
-## 3. The compatibility note: read this before configuring
+## 3. Direct registration inside Snowflake CoWork now works
 
-**Registering the dbt MCP Server directly inside Snowflake CoWork or a
-Cortex Agent does not currently work.** This is not a configuration problem and
-there is no workaround on the Snowflake side. There are two independent
-blockers.
+**This closed since the lab was first built.** Earlier drafts of this repo said
+registering the dbt MCP Server directly inside Snowflake CoWork (formerly
+Snowflake Intelligence) did not work, because Snowflake's external MCP
+connectors needed a confidential OAuth client with a secret while dbt's remote
+MCP issued only public clients with PKCE, and because the connector had no
+documented way to send dbt's required `x-dbt-prod-environment-id` header. Both
+of those were real at the time.
 
-### Blocker 1: OAuth client type
+They are no longer the current state. Snowflake now supports registering an
+external MCP server using **OAuth Dynamic Client Registration (DCR)**:
+Snowflake self-registers as an OAuth client against dbt's authorization
+endpoint on first connect, using PKCE instead of a stored secret — which is
+exactly the client type dbt already issues. That resolves the OAuth mismatch
+without either product changing what it issues. dbt's own docs describe this
+exact pairing:
+[Integrate Snowflake Cortex agents with dbt MCP](https://docs.getdbt.com/docs/dbt-ai/integrate-mcp-snowflake-cortex).
+This path also uses individual per-user OAuth consent rather than a stored
+token, so the `x-dbt-prod-environment-id` header requirement — which only
+applies to the token/PAT-based auth path in section 4 below — does not apply
+here either.
 
-Snowflake's `CREATE EXTERNAL MCP SERVER` requires an API integration with
-`API_USER_AUTHENTICATION = (TYPE = OAUTH2 ...)`, supplying an
-`OAUTH_CLIENT_ID` and an `OAUTH_CLIENT_SECRET`. The documentation states
-Snowflake supports OAuth only for MCP server connections; bearer-token and
-header-based auth are not supported.
-([MCP Connectors](https://docs.snowflake.com/en/user-guide/snowflake-cortex/cortex-agents-mcp-connectors))
+### What to run
 
-dbt's remote MCP server offers OAuth, but its clients are **public clients**:
-dynamic client registration under RFC 7591 by default, and manually registered
-clients use PKCE (RFC 7636) **instead of a client secret**.
-([Set up remote MCP](https://docs.getdbt.com/docs/dbt-ai/setup-remote-mcp))
+```sql
+CREATE API INTEGRATION dbt_mcp_api_integration
+  API_PROVIDER = external_mcp
+  API_ALLOWED_PREFIXES = ('https://{{DBT_HOST}}/api/ai/v1/mcp')
+  API_USER_AUTHENTICATION = (
+    TYPE = OAUTH_DYNAMIC_CLIENT
+    OAUTH_CLIENT_AUTH_METHOD = NONE
+    OAUTH_TOKEN_ENDPOINT = 'https://{{DBT_HOST}}/oauth/token'
+    OAUTH_AUTHORIZATION_ENDPOINT = 'https://{{DBT_HOST}}/oauth/authorize'
+    OAUTH_RESOURCE_URL = 'https://{{DBT_HOST}}/api/ai/v1/mcp'
+    OAUTH_ALLOWED_SCOPES = ('user_access', 'offline_access')
+  )
+  ENABLED = TRUE;
 
-Snowflake wants a confidential client with a secret. dbt issues a public client
-without one.
+CREATE EXTERNAL MCP SERVER dbt_mcp_server
+  WITH DISPLAY_NAME = 'dbt Semantic Layer'
+  URL = 'https://{{DBT_HOST}}/api/ai/v1/mcp'
+  API_INTEGRATION = dbt_mcp_api_integration;
+```
 
-### Blocker 2: the required headers
+Or in Snowsight: **AI & ML → Cortex Agents → Settings → Tools and Connectors →
+Add Custom MCP Connector**, paste the MCP URL, and choose DCR as the
+authentication method. Either way, an attendee then authenticates the
+connector once (**Settings → MCP Connectors → Connect**, redirected to sign
+into dbt platform), and any Cortex Agent can add it as a tool from there.
 
-dbt's remote MCP endpoint needs `x-dbt-prod-environment-id` on every request,
-alongside `Authorization`. Snowflake's MCP connector has no documented way to
-send custom headers to an external MCP server.
+### Before you rely on this for a delivery
+
+- **OAuth for dbt's remote MCP server is Beta**, on Starter, Enterprise and
+  Enterprise+ dbt platform plans.
+  ([Set up remote MCP](https://docs.getdbt.com/docs/dbt-ai/setup-remote-mcp))
+  Confirm your lab account's plan and that AI features are enabled
+  (**Account settings → Enable dbt AI**).
+- **Requires a static subdomain** on the dbt platform account (for example the
+  `abc123` in `abc123.us1.dbt.com`). Accounts on a generic host cannot use this
+  path; fall back to section 4.
+- This has been checked against current dbt and Snowflake documentation, **not
+  against a live run in this lab's account**. Smoke-test it end to end —
+  create the integration, connect, add the connector to one track's agent, ask
+  a question — before the next delivery, and update this note with what you
+  find. `TODO: verify against a live account.`
 
 ### What this means for the lab
 
-The Snowflake Semantic View path is fully hands-on and unaffected. Your
-attendees still get a complete natural-language experience against governed
-metrics.
-
-The dbt MCP path is delivered as a guided walkthrough, with section 4 below as
-the take-home. It genuinely works; it just does not work *inside Snowflake
-Intelligence* yet.
-
-`TODO: verify before each delivery.` This closes if either Snowflake adds
-support for public OAuth clients with PKCE and custom headers on external MCP
-servers, or dbt offers a confidential OAuth client with a client secret for its
-remote MCP endpoint. Both are plausible. Re-read both linked pages.
+Both semantic-layer paths are now fully hands-on. Cortex Analyst against the
+Snowflake Semantic View works as before. The dbt Semantic Layer, via the dbt
+MCP Server registered directly as a Cortex Agent tool, is no longer a
+walkthrough-only fallback — section 4 below (a non-Snowflake MCP client) is now
+the *alternative*, useful for attendees who want to keep using the dbt MCP
+Server after the lab in a tool like Claude Desktop or Cursor, or as a fallback
+if the account lacks a static subdomain or the OAuth beta.
 
 ---
 
-## 4. What works today: dbt MCP in an MCP client
+## 4. Alternative: dbt MCP in a non-Snowflake MCP client
 
-This is the twenty-minute version that actually runs. Do it after the lab, or
-during if you are ahead.
+Use this if section 3 isn't an option for your account (no static subdomain,
+OAuth beta not enabled), or if you want dbt's metrics available in a tool like
+Claude Desktop or Cursor as well as in Snowflake CoWork. Twenty minutes, do it
+after the lab or during if you're ahead.
 
 ### Option A: remote MCP with OAuth (simplest)
 

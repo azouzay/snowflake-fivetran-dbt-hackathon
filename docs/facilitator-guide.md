@@ -274,20 +274,21 @@ defend and one you cannot.
 
 ## Known gaps, so you are not caught out
 
-**The dbt MCP Server cannot currently be registered inside Snowflake
-Intelligence.** Snowflake's external MCP connectors require OAuth with a client
-secret; dbt's remote MCP issues public clients using PKCE. Separately,
-Snowflake has no documented way to send the `x-dbt-prod-environment-id` header
-dbt requires.
-
-Section 7 handles this honestly: Cortex Analyst against the Snowflake Semantic
-View is fully hands-on, and the dbt MCP half is a guided walkthrough with a
-take-home that genuinely works. Full detail and citations in
+**The dbt MCP Server can now be registered directly inside Snowflake CoWork.**
+This used to be blocked — Snowflake's external MCP connectors wanted a
+confidential OAuth client with a secret, dbt's remote MCP issued only public
+clients with PKCE, and there was no documented way to send the
+`x-dbt-prod-environment-id` header dbt's token-auth path requires. Snowflake
+has since added OAuth Dynamic Client Registration for external MCP connectors,
+which self-registers with PKCE and matches what dbt already issues. Section 7
+covers the SQL and prerequisites (OAuth on the dbt side is Beta, needs a
+static subdomain). Full detail and citations in
 [dbt-mcp-on-snowflake-cowork.md](dbt-mcp-on-snowflake-cowork.md).
 
-**Do not gloss over this if someone asks.** Explaining precisely why two
-products do not yet interoperate is more credible than pretending the gap is
-not there, and it is the kind of thing the room will remember you for.
+**This has been checked against current docs, not against a live run in this
+lab's account.** Do that smoke test before you rely on it in front of a room —
+create the connector, connect, add it to one agent, ask a question — and
+update the doc with what you find.
 
 **Re-check it before every delivery.** Both products are moving fast.
 
@@ -301,6 +302,8 @@ dry run three days out is how that gets closed. See `BUILD-NOTES.md` section 4.
 - [ ] Suspend both warehouses
 - [ ] Consider dropping attendee schemas: 30 people times one schema each
 - [ ] Note anything that broke, and open an issue on the repo
-- [ ] If the dbt MCP and Snowflake CoWork gap has closed, update
-      [dbt-mcp-on-snowflake-cowork.md](dbt-mcp-on-snowflake-cowork.md), the three
+- [ ] If the dbt MCP direct-registration smoke test in
+      [dbt-mcp-on-snowflake-cowork.md](dbt-mcp-on-snowflake-cowork.md) section 3
+      turned up anything that contradicts the docs (plan gating, a missing
+      static subdomain, a step that didn't match), update that file, the three
       attendee guides and this file

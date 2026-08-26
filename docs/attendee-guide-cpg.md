@@ -498,22 +498,19 @@ would have told it.
 **Expected result:** answers with the SQL the agent generated shown alongside.
 Read the SQL. It is querying your semantic view, not guessing at table names.
 
-### 9.2 dbt Semantic Layer, via the dbt MCP Server (guided)
-
-The instructor will walk through this rather than everyone doing it live, and
-there is an honest reason why.
+### 9.2 dbt Semantic Layer, via the dbt MCP Server
 
 The dbt MCP Server exposes your MetricFlow metrics as tools an AI agent can
 call, so the agent asks dbt for `total_recognised_revenue` rather than writing
-its own SQL against a table. Registering that server directly inside Snowflake
-Intelligence **does not currently work**: Snowflake's external MCP connectors
-require OAuth with a client secret, and dbt's remote MCP server issues public
-clients using PKCE. Two products, two reasonable choices, one gap.
+its own SQL against a table. Register it directly as a tool on a Cortex Agent
+in Snowflake CoWork using OAuth Dynamic Client Registration — Snowflake
+self-registers with PKCE, no client secret needed on either side. Full setup,
+with the exact SQL:
+[dbt-mcp-on-snowflake-cowork.md](dbt-mcp-on-snowflake-cowork.md) section 3.
 
-What does work today, and is worth twenty minutes of your own time afterwards,
-is connecting the dbt MCP Server to an MCP client that supports it. Full
-instructions, with the exact configuration:
-[dbt-mcp-on-snowflake-cowork.md](dbt-mcp-on-snowflake-cowork.md).
+If your account lacks a static subdomain or the OAuth beta isn't enabled, the
+same doc's section 4 covers connecting the dbt MCP Server to a non-Snowflake
+MCP client instead, worth twenty minutes either way.
 
 **The thing to take away:** when the agent answers through the semantic layer,
 it is constrained to metrics somebody defined and reviewed. When it writes its

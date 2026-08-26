@@ -539,20 +539,18 @@ test on `wti_crude`, and `price_change_pct` divides by the absolute previous
 price so the percentage survives the sign change. Good data quality is not the
 same as making the data look tidy.
 
-### 9.2 dbt Semantic Layer, via the dbt MCP Server (guided)
-
-The instructor will walk through this rather than everyone doing it live, and
-there is an honest reason why.
+### 9.2 dbt Semantic Layer, via the dbt MCP Server
 
 The dbt MCP Server exposes your MetricFlow metrics as tools an AI agent can
 call, so the agent asks dbt for `unplanned_work_rate` rather than writing its
-own SQL. Registering that server directly inside Snowflake CoWork **does
-not currently work**: Snowflake's external MCP connectors require OAuth with a
-client secret, and dbt's remote MCP server issues public clients using PKCE.
+own SQL. Register it directly as a tool on a Cortex Agent in Snowflake CoWork
+using OAuth Dynamic Client Registration — Snowflake self-registers with PKCE,
+no client secret needed on either side. Full setup, with the exact SQL:
+[dbt-mcp-on-snowflake-cowork.md](dbt-mcp-on-snowflake-cowork.md) section 3.
 
-What does work today, and is worth twenty minutes afterwards, is connecting the
-dbt MCP Server to an MCP client that supports it. Full instructions:
-[dbt-mcp-on-snowflake-cowork.md](dbt-mcp-on-snowflake-cowork.md).
+If your account lacks a static subdomain or the OAuth beta isn't enabled, the
+same doc's section 4 covers connecting the dbt MCP Server to a non-Snowflake
+MCP client instead, worth twenty minutes either way.
 
 **The takeaway:** when the agent answers through the semantic layer, it is
 constrained to metrics somebody defined and reviewed. When it writes its own
