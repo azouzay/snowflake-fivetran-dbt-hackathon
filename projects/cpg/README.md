@@ -59,7 +59,7 @@ Both describe the same business, in two places, for two consumers:
 |---|---|---|
 | File | `models/marts/sv_cpg_commercial_performance.sql` | `models/marts/_cpg__marts.yml` (the `semantic_model:` and `metrics:` blocks) |
 | Lives in | Snowflake, as a native object | this repo, served at query time |
-| Read by | Cortex Analyst | dbt MCP Server, then Snowflake AI |
+| Read by | Cortex Analyst | dbt MCP Server, then Snowflake CoWork |
 | Created by | `dbt build` via the Snowflake-Labs package | no warehouse object created |
 
 ## Headline metrics

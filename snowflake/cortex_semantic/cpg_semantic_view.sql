@@ -104,10 +104,11 @@ ORDER BY 2 DESC;
 
 GRANT USAGE  ON DATABASE HOL_SNOWFLAKE_INDUSTRY TO ROLE HOL_ATTENDEE;
 GRANT USAGE  ON SCHEMA   HOL_SNOWFLAKE_INDUSTRY.<dbt_target_schema> TO ROLE HOL_ATTENDEE;
-GRANT SELECT ON SEMANTIC VIEW HOL_SNOWFLAKE_INDUSTRY.<dbt_target_schema>.SV_CPG_COMMERCIAL_PERFORMANCE TO ROLE HOL_ATTENDEE;
+GRANT REFERENCES, SELECT ON SEMANTIC VIEW HOL_SNOWFLAKE_INDUSTRY.<dbt_target_schema>.SV_CPG_COMMERCIAL_PERFORMANCE TO ROLE HOL_ATTENDEE;
 
--- A Semantic View does not launder permissions. The querying role also needs
--- SELECT on the tables underneath it, or Cortex Analyst returns nothing at all
--- rather than an error.
+-- The underlying tables. A Cortex Agent using a Semantic View needs SELECT on
+-- the base tables as well as on the view, or it returns nothing at all rather
+-- than an error. (A plain SQL query against the view would not need this:
+-- Semantic Views use owner's rights. Agents are the exception.)
 GRANT SELECT ON TABLE HOL_SNOWFLAKE_INDUSTRY.<dbt_target_schema>.CPG_ORDER_PERFORMANCE        TO ROLE HOL_ATTENDEE;
 GRANT SELECT ON TABLE HOL_SNOWFLAKE_INDUSTRY.<dbt_target_schema>.CPG_PRODUCT_INVENTORY_HEALTH TO ROLE HOL_ATTENDEE;

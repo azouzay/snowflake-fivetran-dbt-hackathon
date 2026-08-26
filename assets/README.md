@@ -23,7 +23,7 @@ Drop the files in with these exact names and they light up.
 | `dbt-03-wizard-diff.png` | dbt Wizard proposing a fix, with the review and accept controls visible |
 | `dbt-04-catalog-columns.png` | dbt Catalog, Columns tab of a mart, showing data types, descriptions and per-column test results |
 | `dbt-05-catalog-contract.png` | dbt Catalog, Details section showing contracted status on a mart |
-| `snowflake-01-cortex-answer.png` | Snowflake Intelligence answering a track question, with the generated SQL expanded |
+| `snowflake-01-cortex-answer.png` | Snowflake CoWork answering a track question, with the generated SQL expanded |
 
 ## Conventions
 

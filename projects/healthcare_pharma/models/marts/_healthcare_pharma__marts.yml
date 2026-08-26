@@ -491,10 +491,10 @@ models:
   - name: sv_hcp_clinical_trials
     description: >
       Snowflake Semantic View over the pharma clinical trials mart. Read by
-      Cortex Analyst and Snowflake Intelligence. Contains no PHI free text.
+      Cortex Analyst and Snowflake CoWork. Contains no PHI free text.
 
   - name: sv_hcp_clinical_decisions
     description: >
       Snowflake Semantic View over the healthcare clinical decisions mart.
-      Read by Cortex Analyst and Snowflake Intelligence. Contains no PHI free
+      Read by Cortex Analyst and Snowflake CoWork. Contains no PHI free
       text.

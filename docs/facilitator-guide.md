@@ -122,7 +122,7 @@ Tell the author either way, so the repo gets fixed rather than just your copy.
       with the agent instructions pasted in. Those instructions are not
       optional: they are what stops the CPG agent reporting the wrong revenue
       and the energy agent returning empty answers for "this year"
-- [ ] Ask one question per track in Snowflake Intelligence, **signed in as a
+- [ ] Ask one question per track in Snowflake CoWork, **signed in as a
       user whose only role is `HOL_ATTENDEE`**
 
 ### Day of, before doors open
@@ -283,7 +283,7 @@ dbt requires.
 Section 7 handles this honestly: Cortex Analyst against the Snowflake Semantic
 View is fully hands-on, and the dbt MCP half is a guided walkthrough with a
 take-home that genuinely works. Full detail and citations in
-[dbt-mcp-on-snowflake-ai.md](dbt-mcp-on-snowflake-ai.md).
+[dbt-mcp-on-snowflake-cowork.md](dbt-mcp-on-snowflake-cowork.md).
 
 **Do not gloss over this if someone asks.** Explaining precisely why two
 products do not yet interoperate is more credible than pretending the gap is
@@ -301,6 +301,6 @@ dry run three days out is how that gets closed. See `BUILD-NOTES.md` section 4.
 - [ ] Suspend both warehouses
 - [ ] Consider dropping attendee schemas: 30 people times one schema each
 - [ ] Note anything that broke, and open an issue on the repo
-- [ ] If the dbt MCP and Snowflake AI gap has closed, update
-      [dbt-mcp-on-snowflake-ai.md](dbt-mcp-on-snowflake-ai.md), the three
+- [ ] If the dbt MCP and Snowflake CoWork gap has closed, update
+      [dbt-mcp-on-snowflake-cowork.md](dbt-mcp-on-snowflake-cowork.md), the three
       attendee guides and this file

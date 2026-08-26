@@ -373,7 +373,7 @@ and recognising when two things are genuinely unrelated is a modelling skill.
 |---|---|---|
 | Where the definition lives | in Snowflake, as an object | in this repo, in git |
 | Created by | `dbt build`, via the Snowflake-Labs package | nothing created in the warehouse |
-| Read by | Cortex Analyst | any MetricFlow client, and Snowflake AI via the dbt MCP Server |
+| Read by | Cortex Analyst | any MetricFlow client, and Snowflake CoWork via the dbt MCP Server |
 | Changed by | editing the dbt model, then rebuilding | editing the YAML, then a pull request |
 
 **Now find the honest difference.** `sv_energy_commodity_prices.sql` defines:
@@ -546,13 +546,13 @@ there is an honest reason why.
 
 The dbt MCP Server exposes your MetricFlow metrics as tools an AI agent can
 call, so the agent asks dbt for `unplanned_work_rate` rather than writing its
-own SQL. Registering that server directly inside Snowflake Intelligence **does
+own SQL. Registering that server directly inside Snowflake CoWork **does
 not currently work**: Snowflake's external MCP connectors require OAuth with a
 client secret, and dbt's remote MCP server issues public clients using PKCE.
 
 What does work today, and is worth twenty minutes afterwards, is connecting the
 dbt MCP Server to an MCP client that supports it. Full instructions:
-[dbt-mcp-on-snowflake-ai.md](dbt-mcp-on-snowflake-ai.md).
+[dbt-mcp-on-snowflake-cowork.md](dbt-mcp-on-snowflake-cowork.md).
 
 **The takeaway:** when the agent answers through the semantic layer, it is
 constrained to metrics somebody defined and reviewed. When it writes its own

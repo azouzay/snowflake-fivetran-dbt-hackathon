@@ -1,4 +1,4 @@
-# Cortex Agents and Snowflake Intelligence setup
+# Cortex Agents and Snowflake CoWork setup
 
 **Owner: the Snowflake team. Done before the lab, not during it.**
 
@@ -10,7 +10,7 @@ the day before, plus one end-to-end test signed in as an attendee-role user.
 ## What you are building
 
 One Cortex Agent per track, each pointed at the Semantic View that dbt creates,
-surfaced in Snowflake Intelligence at `ai.snowflake.com`.
+surfaced in Snowflake CoWork at `ai.snowflake.com`.
 
 | Track | Agent | Semantic View |
 |---|---|---|
@@ -51,12 +51,22 @@ agent looks broken.
 
 ## Prerequisites
 
-From [../GOTCHAS.md](../GOTCHAS.md) section 7, all three must be true:
+From [../GOTCHAS.md](../GOTCHAS.md) section 7, all four must be true:
 
-- `SNOWFLAKE.CORTEX_USER` granted to `HOL_ATTENDEE`
+- `SNOWFLAKE.CORTEX_USER` granted to `HOL_ATTENDEE` (or the narrower
+  `SNOWFLAKE.CORTEX_AGENT_USER`, if the account deliberately withholds the rest
+  of Cortex)
 - Cortex models available in the account region, or
   `CORTEX_ENABLED_CROSS_REGION` set
-- Snowflake Intelligence enabled on the account
+- Snowflake CoWork enabled on the account
+- If the account has a CoWork object, each agent added to it and `USAGE`
+  granted on the object. Check with `SHOW SNOWFLAKE INTELLIGENCES`. Without
+  this, the agents exist and simply do not appear in CoWork.
+
+> **A note on the name.** Snowflake Intelligence was renamed **Snowflake
+> CoWork**. The SQL identifiers did not change: the object type is still
+> `SNOWFLAKE INTELLIGENCE`, and so are `ALLOWED_INTERFACES = (SNOWFLAKE_INTELLIGENCE)`
+> and `LOGIN_IDP_REDIRECT`. Expect the old name in SQL and the new one in the UI.
 
 ---
 
@@ -67,7 +77,8 @@ SQL; either is fine, the UI is faster for three agents.
 
 For each agent:
 
-1. **Add a Cortex Analyst tool** and point it at the Semantic View.
+1. **Add a Cortex Analyst tool** and point it at the Semantic View. In Snowsight
+   this is the **Tools** tab, then **+ Add** and **Semantic view**.
 2. **Name the tool something a model can reason about.** `commodity_prices` and
    `equipment_maintenance` beat `tool_1` and `tool_2`, because the agent uses
    the tool name to decide where to send a question.
@@ -79,6 +90,11 @@ For each agent:
 
 ```sql
 GRANT USAGE ON AGENT HOL_CPG_ANALYST TO ROLE HOL_ATTENDEE;
+
+-- If the account has a CoWork object, the agent also has to be added to it or
+-- it will not show up in CoWork at all.
+ALTER SNOWFLAKE INTELLIGENCE SNOWFLAKE_INTELLIGENCE_OBJECT_DEFAULT
+  ADD AGENT HOL_SNOWFLAKE_INDUSTRY.<schema>.HOL_CPG_ANALYST;
 ```
 
 ---
@@ -269,9 +285,16 @@ social security number, on a different kind of sensitive data.
 ## Troubleshooting
 
 **Agent returns nothing at all, no error.**
-Almost always missing grants on the tables underneath the Semantic View. A
-Semantic View does not launder permissions. Check the `GRANT SELECT ON TABLE`
-statements in the per-track file.
+Almost always a missing grant. Check two things, in this order: `REFERENCES` as
+well as `SELECT` on the Semantic View, then `SELECT` on the tables underneath it.
+An agent using a Semantic View needs base-table access even though a plain SQL
+query against the same view would not — see [../GOTCHAS.md](../GOTCHAS.md)
+section 8. Check the `GRANT` statements in the per-track file.
+
+**Agent does not appear in CoWork at all.**
+Different failure, different cause. If the account has a CoWork object, the agent
+has to be added to it. `SHOW SNOWFLAKE INTELLIGENCES` tells you whether one
+exists.
 
 **Agent worked yesterday, does not today.**
 The dbt job ran and `CREATE OR REPLACE SEMANTIC VIEW` dropped the object along
@@ -311,4 +334,4 @@ clients using PKCE. Nothing is required from the Snowflake side to work around
 it.
 
 The full explanation, with citations and a path that works today, is in
-[../../docs/dbt-mcp-on-snowflake-ai.md](../../docs/dbt-mcp-on-snowflake-ai.md).
+[../../docs/dbt-mcp-on-snowflake-cowork.md](../../docs/dbt-mcp-on-snowflake-cowork.md).

@@ -256,6 +256,15 @@ about Cortex.
 GRANT DATABASE ROLE SNOWFLAKE.CORTEX_USER TO ROLE HOL_ATTENDEE;
 ```
 
+In a hardened account where `CORTEX_USER` has been revoked from `PUBLIC` on
+purpose and nobody wants it back, there is a narrower option:
+`SNOWFLAKE.CORTEX_AGENT_USER` grants the Cortex Agents API only, which is enough
+for Snowflake CoWork without handing over every other Cortex feature.
+
+```sql
+GRANT DATABASE ROLE SNOWFLAKE.CORTEX_AGENT_USER TO ROLE HOL_ATTENDEE;
+```
+
 **The region.** Cortex models are not available in every region, and a trial
 account signed up on the day lands wherever the person clicking the button
 happened to land. If the model is not available locally, enable cross-region
@@ -276,9 +285,31 @@ requests outside the account's home geography, which is a straightforward
 conversation for a synthetic-data lab and a much longer one if anyone assumes
 the same setting is fine in production.
 
-**Snowflake Intelligence needs its own enablement.** It is not automatically on
+**Snowflake CoWork needs its own enablement.** It is not automatically on
 just because Cortex functions work. Turn it on and confirm you can reach
 `ai.snowflake.com` with the lab role well before the day.
+
+**The CoWork object can hide your agents.** This one is new and it will waste
+your morning. Snowflake CoWork can be governed by an account-level object, and
+if the account has one, **an agent that is not added to it does not appear in
+CoWork at all** — it is reachable only by direct link or through Snowsight. On a
+fresh trial there is usually no such object and every agent the role can see just
+shows up. On a shared or pre-existing account, assume there is one and check:
+
+```sql
+SHOW SNOWFLAKE INTELLIGENCES;   -- note: the SQL keyword is still SNOWFLAKE INTELLIGENCE
+
+ALTER SNOWFLAKE INTELLIGENCE SNOWFLAKE_INTELLIGENCE_OBJECT_DEFAULT
+  ADD AGENT HOL_SNOWFLAKE_INDUSTRY.<schema>.HOL_CPG_ANALYST;
+
+GRANT USAGE ON SNOWFLAKE INTELLIGENCE SNOWFLAKE_INTELLIGENCE_OBJECT_DEFAULT
+  TO ROLE HOL_ATTENDEE;
+```
+
+Adding an agent to the object needs `ALTER` on the object and `USAGE` on the
+agent. Managing agent visibility via the `SNOWFLAKE_INTELLIGENCE.AGENTS` schema
+is the older mechanism and is now deprecated; existing agents keep working. See
+[User access and settings for agents](https://docs.snowflake.com/en/user-guide/snowflake-cortex/snowflake-cowork/deploy-agents).
 
 **Flag region problems early.** If attendees create their own trial accounts on
 the morning, some of them will land in a region without the models, and you
@@ -292,37 +323,61 @@ consumption section.
 The Semantic Views in this lab are created by dbt, using the
 [Snowflake-Labs/dbt_semantic_view](https://hub.getdbt.com/Snowflake-Labs/dbt_semantic_view/latest/)
 package. That means they are owned by the dbt role, not by whoever is asking
-questions in Snowflake Intelligence. Those are different identities and the
+questions in Snowflake CoWork. Those are different identities and the
 grants do not happen by themselves.
 
-For Cortex Analyst to read a Semantic View, the querying role needs `SELECT` on
-the Semantic View and `USAGE` on its database and schema, **plus** access to the
-underlying tables the view references. A Semantic View does not launder
-permissions: a role that cannot read `fs_monthly_risk_assessment` cannot get at
-it through `sv_fs_credit_risk` either.
+Two privileges, not one. To use a Semantic View it does not own in Cortex
+Analyst, the querying role needs **both `REFERENCES` and `SELECT`** on the view,
+plus `USAGE` on its database and schema. `REFERENCES` is the one people miss;
+it is also what `GET_DDL` requires, so without it an attendee cannot inspect the
+view they are querying. Source:
+[Granting privileges on semantic views](https://docs.snowflake.com/en/user-guide/views-semantic/sql#granting-privileges-on-semantic-views).
+
+**Then grant the underlying tables as well — but not for the reason you'd
+expect.** A Semantic View uses *owner's rights*: querying one directly in SQL
+needs `SELECT` on the view only, exactly like a standard view, and base-table
+access is not required. Cortex **Agents** are the exception. An agent that uses
+a Semantic View requires the executing role to have `SELECT` on the view **and**
+on its underlying tables. Since this lab consumes the views through an agent,
+grant both. Source:
+[Best practices for developing and deploying semantic views](https://docs.snowflake.com/en/user-guide/views-semantic/best-practices-dev#grant-privileges-on-semantic-view-objects).
+
+Worth being precise about this, because "a Semantic View does not launder
+permissions" is a tempting shorthand and it is wrong. For direct SQL, it
+launders them by design. Do not let anyone leave the room planning a production
+access model on the shorthand.
 
 ```sql
 GRANT USAGE ON DATABASE HOL_SNOWFLAKE_INDUSTRY TO ROLE HOL_ATTENDEE;
 GRANT USAGE ON SCHEMA   HOL_SNOWFLAKE_INDUSTRY.<dbt_target_schema> TO ROLE HOL_ATTENDEE;
-GRANT SELECT ON ALL SEMANTIC VIEWS IN SCHEMA HOL_SNOWFLAKE_INDUSTRY.<dbt_target_schema> TO ROLE HOL_ATTENDEE;
-GRANT SELECT ON ALL TABLES         IN SCHEMA HOL_SNOWFLAKE_INDUSTRY.<dbt_target_schema> TO ROLE HOL_ATTENDEE;
+GRANT REFERENCES, SELECT ON ALL SEMANTIC VIEWS IN SCHEMA HOL_SNOWFLAKE_INDUSTRY.<dbt_target_schema> TO ROLE HOL_ATTENDEE;
+GRANT SELECT ON ALL TABLES                     IN SCHEMA HOL_SNOWFLAKE_INDUSTRY.<dbt_target_schema> TO ROLE HOL_ATTENDEE;
 
 -- dbt rebuilds these on every run, so cover what it creates next time too.
-GRANT SELECT ON FUTURE SEMANTIC VIEWS IN SCHEMA HOL_SNOWFLAKE_INDUSTRY.<dbt_target_schema> TO ROLE HOL_ATTENDEE;
-GRANT SELECT ON FUTURE TABLES         IN SCHEMA HOL_SNOWFLAKE_INDUSTRY.<dbt_target_schema> TO ROLE HOL_ATTENDEE;
+GRANT REFERENCES, SELECT ON FUTURE SEMANTIC VIEWS IN SCHEMA HOL_SNOWFLAKE_INDUSTRY.<dbt_target_schema> TO ROLE HOL_ATTENDEE;
+GRANT SELECT ON FUTURE TABLES                     IN SCHEMA HOL_SNOWFLAKE_INDUSTRY.<dbt_target_schema> TO ROLE HOL_ATTENDEE;
 ```
 
 **The rebuild trap.** By default the package issues `CREATE OR REPLACE SEMANTIC
 VIEW`, which drops the object and takes every grant on it with it. Attendees
-then find that the agent worked before lunch and does not after. Two ways out:
-set `create_or_alter=true` in the model config, or set `copy_grants=true`.
-Note that Snowflake does not support `COPY GRANTS` with `CREATE OR ALTER`, so
-these are alternatives rather than a belt-and-braces pair. For a lab, re-running
-the grant statements after the dbt job is the simplest thing that works.
+then find that the agent worked before lunch and does not after. Two ways out,
+and they are not equal:
+
+- `create_or_alter=true` in the model config. `CREATE OR ALTER SEMANTIC VIEW`
+  **preserves existing grants without needing `COPY GRANTS` at all**, so this is
+  the better fix, not merely an alternative. Note it is a Preview feature
+  (May 2026), so confirm it is available in your account before relying on it.
+- `copy_grants=true`, which maps to `CREATE OR REPLACE … COPY GRANTS`.
+
+Snowflake does not support `COPY GRANTS` together with `CREATE OR ALTER`, but
+that is redundancy rather than a limitation: `CREATE OR ALTER` already keeps the
+grants. For a lab, re-running the grant statements after the dbt job is still the
+simplest thing that works and needs nothing in Preview.
 
 **Empty agent, no error.** If Cortex Analyst returns nothing at all rather than
-an error, missing grants on the underlying tables is the first thing to check.
-It frequently looks like a modelling problem and is almost always a grant.
+an error, missing grants are the first thing to check — `REFERENCES` on the
+Semantic View, or `SELECT` on the underlying tables. It frequently looks like a
+modelling problem and is almost always a grant.
 
 ---
 
@@ -331,7 +386,7 @@ It frequently looks like a modelling problem and is almost always a grant.
 Worth knowing so nobody spends the morning on it.
 
 The lab wires the dbt Semantic Layer into an AI client through the dbt MCP
-Server. Registering that server directly inside Snowflake Intelligence does not
+Server. Registering that server directly inside Snowflake CoWork does not
 currently work, and it is not a configuration problem on your side.
 
 Snowflake's `CREATE EXTERNAL MCP SERVER` requires an API integration using
@@ -343,7 +398,7 @@ dbt issues a public one. Separately, dbt's endpoint needs an
 `x-dbt-prod-environment-id` header that the Snowflake connector has no
 documented way to send.
 
-`docs/dbt-mcp-on-snowflake-ai.md` covers this in full and gives the attendees a
+`docs/dbt-mcp-on-snowflake-cowork.md` covers this in full and gives the attendees a
 path that works today. Nothing is required from the Snowflake side beyond the
 Semantic View grants in section 8.
 
@@ -364,6 +419,7 @@ Run through this the day before, not the morning of.
 - [ ] Identifier casing confirmed against `information_schema.columns`, and `quoting` in all three projects matches
 - [ ] `SNOWFLAKE.CORTEX_USER` granted to the attendee role
 - [ ] Cortex model availability confirmed in the account region, or `CORTEX_ENABLED_CROSS_REGION` set
-- [ ] Snowflake Intelligence enabled and reachable at `ai.snowflake.com` with the lab role
-- [ ] Semantic View grants applied **after** the dbt job has run at least once
-- [ ] One end-to-end question answered in Snowflake Intelligence, signed in as an attendee-role user rather than as ACCOUNTADMIN
+- [ ] Snowflake CoWork enabled and reachable at `ai.snowflake.com` with the lab role
+- [ ] `SHOW SNOWFLAKE INTELLIGENCES` checked; if a CoWork object exists, every agent added to it and `USAGE` granted
+- [ ] Semantic View grants applied **after** the dbt job has run at least once, including `REFERENCES` and not just `SELECT`
+- [ ] One end-to-end question answered in Snowflake CoWork, signed in as an attendee-role user rather than as ACCOUNTADMIN

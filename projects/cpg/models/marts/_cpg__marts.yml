@@ -449,4 +449,4 @@ models:
     description: >-
       Snowflake Semantic View over the two consumer packaged goods marts. Facts,
       dimensions and metrics defined natively in Snowflake and consumed by
-      Cortex Analyst and Snowflake Intelligence.
+      Cortex Analyst and Snowflake CoWork.

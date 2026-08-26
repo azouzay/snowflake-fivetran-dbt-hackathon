@@ -39,7 +39,7 @@ leaderboard is meaningful even though the content differs.
 | Each seeded bug fixed correctly | 10 each (40 total) | Wrong-fix-that-compiles counts as unfixed even if the build goes green — check the diff, not just the build status |
 | Opened and compared both semantic-layer definitions | 10 | Snowflake Semantic View and dbt Semantic Layer, same metric, side by side |
 | Green production job, dbt Catalog populated | 15 | The second hard gate in the base lab, carried over unchanged |
-| Correctly answered 3 of the 8 sample questions via Cortex Analyst / Snowflake Intelligence | 15 | Pick 3 from the track's list in `snowflake/cortex_semantic/agents_setup.md` |
+| Correctly answered 3 of the 8 sample questions via Cortex Analyst / Snowflake CoWork | 15 | Pick 3 from the track's list in `snowflake/cortex_semantic/agents_setup.md` |
 | Streamlit exposure stretch goal: one new tile or filter shipped | 10 (bonus) | Not required to finish; rewards teams who get through the rest early |
 | Time to first green production job | Tiebreaker only | Never worth more than the accuracy items above |
 

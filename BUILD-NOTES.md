@@ -193,7 +193,7 @@ because its branches are cleanly independent.
 
 ## 4. Open items and honest gaps
 
-### The dbt MCP Server cannot currently be registered directly in Snowflake AI
+### The dbt MCP Server cannot currently be registered directly in Snowflake CoWork
 
 This is the one place the lab could not be built as specified, and it is a
 product-compatibility gap rather than a design choice.
@@ -212,7 +212,7 @@ So Snowflake wants a confidential client with a secret, dbt issues a public
 client with PKCE, and Snowflake has no documented way to send the required
 `x-dbt-prod-environment-id` header. Two independent blockers.
 
-`docs/dbt-mcp-on-snowflake-ai.md` documents both sides accurately, states the
+`docs/dbt-mcp-on-snowflake-cowork.md` documents both sides accurately, states the
 blocker precisely with citations, marks the direct-registration path
 `TODO: verify`, and gives a hands-on alternative that works today. The
 Snowflake Semantic View path via Cortex Analyst stays fully hands-on, so the
