@@ -532,9 +532,9 @@ models:
   - name: sv_energy_commodity_prices
     description: >
       Snowflake Semantic View over the commodity price fact. Read by Cortex
-      Analyst and Snowflake Intelligence.
+      Analyst and Snowflake CoWork.
 
   - name: sv_energy_equipment_reliability
     description: >-
       Snowflake Semantic View over the de-duplicated maintenance fact. Read by
-      Cortex Analyst and Snowflake Intelligence.
+      Cortex Analyst and Snowflake CoWork.

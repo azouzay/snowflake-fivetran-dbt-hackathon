@@ -175,7 +175,7 @@ guides are explicit about when you would reach for each.
 │   ├── agenda.md                the two-hour run of show
 │   ├── account-setup.md         Fivetran, dbt platform and Snowflake signup, and fallbacks
 │   ├── attendee-guide-*.md      one step-by-step guide per track
-│   ├── dbt-mcp-on-snowflake-ai.md   wiring the dbt MCP Server into an AI client
+│   ├── dbt-mcp-on-snowflake-cowork.md   wiring the dbt MCP Server into an AI client
 │   ├── facilitator-guide.md     instructor runbook
 │   ├── answer-key.md            facilitator only: every seeded bug and its fix
 │   └── adding-an-industry.md    how to add a fourth track

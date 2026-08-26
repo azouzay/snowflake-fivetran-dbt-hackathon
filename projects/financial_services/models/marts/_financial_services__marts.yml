@@ -932,7 +932,7 @@ models:
       Snowflake Semantic View over the credit risk star. Two logical tables
       joined on the relationship key, so risk can be trended over time and
       sliced by customer and institution attributes in one question. Read by
-      Cortex Analyst and Snowflake Intelligence. Contains no personal data.
+      Cortex Analyst and Snowflake CoWork. Contains no personal data.
 
   # ===========================================================================
   # STRETCH MARTS

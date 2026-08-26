@@ -1,4 +1,4 @@
-# The dbt MCP Server and Snowflake AI
+# The dbt MCP Server and Snowflake CoWork
 
 **Read the compatibility note in section 3 before you start configuring
 anything.** It will save you an hour.
@@ -47,7 +47,7 @@ can put in front of a regulator and one you cannot.
 | | Snowflake Semantic View | dbt Semantic Layer via MCP |
 |---|---|---|
 | Definition lives in | Snowflake, as an object | your dbt repo, in git |
-| Consumed by | Cortex Analyst, Snowflake Intelligence | any MCP client |
+| Consumed by | Cortex Analyst, Snowflake CoWork | any MCP client |
 | Available to non-Snowflake tools | no | yes |
 | Change control | rebuild the dbt model | pull request on the YAML |
 | Status in this lab | **fully hands-on, works today** | see section 3 |
@@ -83,7 +83,7 @@ empty metric list and looks broken.
 
 ## 3. The compatibility note: read this before configuring
 
-**Registering the dbt MCP Server directly inside Snowflake Intelligence or a
+**Registering the dbt MCP Server directly inside Snowflake CoWork or a
 Cortex Agent does not currently work.** This is not a configuration problem and
 there is no workaround on the Snowflake side. There are two independent
 blockers.

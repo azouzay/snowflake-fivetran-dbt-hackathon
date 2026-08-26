@@ -93,7 +93,7 @@ room.
 | | |
 |---|---|
 | **How** | Usually supplied by the instructor. If you are creating your own, `signup.snowflake.com` |
-| **What you get** | Read access to the lab database, and access to Snowflake Intelligence at `ai.snowflake.com` |
+| **What you get** | Read access to the lab database, and access to Snowflake CoWork at `ai.snowflake.com` |
 | **Time to provision** | Instant if supplied. 5 to 10 minutes for a self-service trial, plus email verification |
 
 **If you are creating your own trial, pick your region deliberately.** Cortex
@@ -142,7 +142,7 @@ key-pair authentication, you need the private key, not a password, and it must
 be pasted including the `-----BEGIN PRIVATE KEY-----` and
 `-----END PRIVATE KEY-----` lines.
 
-**Cortex or Snowflake Intelligence is not available.**
+**Cortex or Snowflake CoWork is not available.**
 Region problem, almost certainly, if you created your own trial. Switch to the
 shared lab account.
 

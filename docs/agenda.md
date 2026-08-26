@@ -182,11 +182,11 @@ This lands harder straight after Catalog, because they have just seen the
 metadata the agent is using.
 
 The dbt MCP Server half is currently a guided read-through rather than
-hands-on, because the direct registration into Snowflake Intelligence does not
+hands-on, because the direct registration into Snowflake CoWork does not
 work yet. The reason is specific and worth explaining rather than glossing:
 Snowflake's external MCP connectors require OAuth with a client secret and
 dbt's remote MCP issues public clients using PKCE. See
-[dbt-mcp-on-snowflake-ai.md](dbt-mcp-on-snowflake-ai.md), which also gives a
+[dbt-mcp-on-snowflake-cowork.md](dbt-mcp-on-snowflake-cowork.md), which also gives a
 path that does work if anyone wants to try it after.
 
 Financial services attendees should ask the agent for a customer's social

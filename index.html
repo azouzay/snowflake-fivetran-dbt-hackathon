@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Interactive lab guide: Fivetran → Snowflake → dbt → Snowflake Intelligence</title>
+<title>Interactive lab guide: Fivetran → Snowflake → dbt → Snowflake CoWork</title>
 <style>
   :root{
     --bg:#0d1117; --panel:#161b22; --panel2:#1c2431; --border:#2a3340;
@@ -62,7 +62,7 @@
     .subnode p{font-size:11px}
   }
   /* Below tablet: stack. Source order is Fivetran, Snowflake, dbt platform,
-     its two capabilities, then Snowflake Intelligence, so the nesting holds. */
+     its two capabilities, then Snowflake CoWork, so the nesting holds. */
   @media(max-width:700px){
     .flow{grid-template-columns:1fr; gap:16px}
     .n1,.n2,.n3,.n4,.subs{grid-area:auto}
@@ -210,7 +210,7 @@
 <header class="hero">
   <div class="wrap">
     <span class="kicker">Two-hour hands-on lab · attendee walkthrough</span>
-    <h1>Fivetran → Snowflake → <span class="grad">dbt platform</span> → Snowflake Intelligence</h1>
+    <h1>Fivetran → Snowflake → <span class="grad">dbt platform</span> → Snowflake CoWork</h1>
     <p class="sub">Build the full modern data stack loop on your own data, in your own accounts. Land it, model and govern it, then ask it questions in plain English.</p>
     <div class="meta-row">
       <span>120 min · hard stop</span>
@@ -251,7 +251,7 @@
       </div>
     </div>
     <div class="node n4" data-k="ai" style="--nc:#7c5cff">
-      <h3><span class="dot"></span>Snowflake Intelligence</h3><p>Ask in English</p><span class="plus">+</span>
+      <h3><span class="dot"></span>Snowflake CoWork</h3><p>Ask in English</p><span class="plus">+</span>
     </div>
   </div>
   <div class="node-detail" id="ndetail"></div>
@@ -314,7 +314,7 @@
       <span class="status" style="background:rgba(63,185,80,.15);color:var(--green)">Fully hands-on · works today</span>
       <table>
         <tr><td>Definition lives in</td><td>Snowflake, as an object</td></tr>
-        <tr><td>Consumed by</td><td>Cortex Analyst, Snowflake Intelligence</td></tr>
+        <tr><td>Consumed by</td><td>Cortex Analyst, Snowflake CoWork</td></tr>
         <tr><td>Non-Snowflake tools</td><td>No</td></tr>
         <tr><td>Change control</td><td>Rebuild the dbt model</td></tr>
         <tr><td>Reach for it when</td><td>Everything you own is in Snowflake; it's closer to the data and simpler</td></tr>
@@ -334,14 +334,14 @@
   </div>
   <div class="callout key" style="margin-top:16px">
     <span class="lab">Why the dbt MCP path is a walkthrough (for now)</span>
-    Registering the dbt MCP Server <em>directly inside Snowflake Intelligence</em> doesn't work yet: Snowflake's external MCP connectors require a confidential OAuth client with a secret, while dbt's remote MCP issues public clients using PKCE, and needs an <code>x-dbt-prod-environment-id</code> header Snowflake can't send. The dbt MCP Server works today in any MCP client (Claude Desktop, Cursor, VS Code); it's the in-Snowflake registration that's pending. Re-verify before each delivery.
+    Registering the dbt MCP Server <em>directly inside Snowflake CoWork</em> doesn't work yet: Snowflake's external MCP connectors require a confidential OAuth client with a secret, while dbt's remote MCP issues public clients using PKCE, and needs an <code>x-dbt-prod-environment-id</code> header Snowflake can't send. The dbt MCP Server works today in any MCP client (Claude Desktop, Cursor, VS Code); it's the in-Snowflake registration that's pending. Re-verify before each delivery.
   </div>
 </section>
 
 <footer>
   <div class="wrap">
     <p>Interactive attendee walkthrough · based on the <a href="https://github.com/hicham-bab/snowflake-fivetran-dbt-hol" target="_blank">snowflake-fivetran-dbt-hol</a> lab.</p>
-    <p>Fivetran (ingest) → Snowflake (store) → dbt platform (transform &amp; govern) → semantic layer (define meaning) → dbt Catalog (see the metadata) → Snowflake Intelligence (ask in English).</p>
+    <p>Fivetran (ingest) → Snowflake (store) → dbt platform (transform &amp; govern) → semantic layer (define meaning) → dbt Catalog (see the metadata) → Snowflake CoWork (ask in English).</p>
   </div>
 </footer>
 
@@ -349,11 +349,11 @@
 /* ---------- architecture node details ---------- */
 const details = {
   fivetran:{c:"#2f80ff",h:"Fivetran: ingest",b:"A managed connector moves your source (PostgreSQL) into Snowflake. It takes about four minutes and then raw tables simply exist. Watch for the <code>_fivetran_synced</code> column, it isn't in the source; Fivetran added it, and it's how you answer \"when did this row last change\". The sync runs in the background while you move on to dbt."},
-  snowflake:{c:"#29b5e8",h:"Snowflake: store",b:"Raw landed tables live here in a dedicated schema. Nothing is transformed yet. This is also where your governed marts, Semantic View and the Cortex/Snowflake Intelligence experience all run later, the whole loop lands and finishes in one platform."},
+  snowflake:{c:"#29b5e8",h:"Snowflake: store",b:"Raw landed tables live here in a dedicated schema. Nothing is transformed yet. This is also where your governed marts, Semantic View and the Cortex/Snowflake CoWork experience all run later, the whole loop lands and finishes in one platform."},
   dbt:{c:"#ff694a",h:"dbt platform: transform &amp; govern",b:"Point dbt at your landed data, then build staging and marts in <b>dbt Studio</b> with <b>dbt Wizard</b> as an agent (not autocomplete) and <b>Fusion</b> giving instant feedback. Four things in each track are deliberately broken, you fix them by talking to the agent and reviewing every change. The agent writes; you stay accountable."},
   sem:{c:"#e3b341",h:"Semantic layer: define meaning",b:"The same metrics are defined twice: a <b>Snowflake Semantic View</b> (native, read by Cortex Analyst) and <b>dbt Semantic Layer</b> specs (in the repo, read through the dbt MCP Server). Two answers to \"where should the definition of revenue live\"."},
   catalog:{c:"#3fb950",h:"dbt Catalog: the metadata the agent will use",b:"<b>dbt Catalog and the dbt MCP Server read the same metadata, through the same Discovery API.</b> Catalog renders it for a human; the MCP Server hands it to an agent. So this is a preview of the agent's context window: your column descriptions, data types, test results, lineage and <b>contracted status</b>. Needs a successful production job with <code>dbt build</code> plus <code>dbt docs generate</code>, or it's empty."},
-  ai:{c:"#7c5cff",h:"Snowflake Intelligence: ask in English",b:"Ask questions of governed metrics in plain English through Snowflake Intelligence and Cortex Analyst, and get one consistent answer. In financial services, ask for a customer's SSN and it can't answer, because the column was never selected. That's the governance beat."}
+  ai:{c:"#7c5cff",h:"Snowflake CoWork: ask in English",b:"Ask questions of governed metrics in plain English through Snowflake CoWork and Cortex Analyst, and get one consistent answer. In financial services, ask for a customer's SSN and it can't answer, because the column was never selected. That's the governance beat."}
 };
 const nodes=document.querySelectorAll('.node,.subnode'), nd=document.getElementById('ndetail');
 nodes.forEach(n=>n.addEventListener('click',()=>{
@@ -447,7 +447,7 @@ const steps = [
     <p>You should see these metrics come back:</p>
     <div class="tw-metrics"></div>
     <div class="callout key"><span class="lab">Your track's governance beat</span><span class="tw-beat"></span></div>
-    <div class="callout fb"><span class="lab">The dbt MCP half</span>Delivered as a guided read-through: direct registration into Snowflake Intelligence doesn't work yet (Snowflake's external MCP connectors need a confidential OAuth client with a secret; dbt issues public clients using PKCE). It works today in any MCP client, see section 3 above.</div>`},
+    <div class="callout fb"><span class="lab">The dbt MCP half</span>Delivered as a guided read-through: direct registration into Snowflake CoWork doesn't work yet (Snowflake's external MCP connectors need a confidential OAuth client with a secret; dbt issues public clients using PKCE). It works today in any MCP client, see section 3 above.</div>`},
 
   {clock:"1:55",min:5,title:"Wrap, pull request & next steps",body:`
     <p>Commit and open a pull request. Don't merge: the point is the change is <em>reviewable</em>, not that it ships. Look at what's in the diff, including the contract change.</p>

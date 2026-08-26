@@ -336,7 +336,7 @@ They describe the same business. Find `total_recognised_revenue` in both.
 |---|---|---|
 | Where the definition lives | in Snowflake, as an object | in this repo, in git |
 | Created by | `dbt build`, via the Snowflake-Labs package | nothing is created in the warehouse |
-| Read by | Cortex Analyst | any MetricFlow client, and Snowflake AI via the dbt MCP Server |
+| Read by | Cortex Analyst | any MetricFlow client, and Snowflake CoWork via the dbt MCP Server |
 | Changed by | editing the dbt model, then rebuilding | editing the YAML, then a pull request |
 | Also usable from | anything that can query Snowflake | any tool that speaks to the dbt Semantic Layer |
 
@@ -513,7 +513,7 @@ clients using PKCE. Two products, two reasonable choices, one gap.
 What does work today, and is worth twenty minutes of your own time afterwards,
 is connecting the dbt MCP Server to an MCP client that supports it. Full
 instructions, with the exact configuration:
-[dbt-mcp-on-snowflake-ai.md](dbt-mcp-on-snowflake-ai.md).
+[dbt-mcp-on-snowflake-cowork.md](dbt-mcp-on-snowflake-cowork.md).
 
 **The thing to take away:** when the agent answers through the semantic layer,
 it is constrained to metrics somebody defined and reviewed. When it writes its
