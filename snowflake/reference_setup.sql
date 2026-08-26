@@ -66,7 +66,7 @@ CREATE ROLE IF NOT EXISTS HOL_DBT
   COMMENT = 'dbt platform role. Reads raw, writes marts and semantic views.';
 
 CREATE ROLE IF NOT EXISTS HOL_ATTENDEE
-  COMMENT = 'Attendee role for Snowsight and Snowflake Intelligence. Read-only on data.';
+  COMMENT = 'Attendee role for Snowsight and Snowflake CoWork. Read-only on data.';
 
 GRANT ROLE HOL_FIVETRAN TO ROLE SYSADMIN;
 GRANT ROLE HOL_DBT      TO ROLE SYSADMIN;
@@ -194,7 +194,7 @@ GRANT USAGE ON SCHEMA HOL_SNOWFLAKE_INDUSTRY.hicham_bab_financial_services      
 -- 8. Cortex
 --
 -- Three things must be true before Cortex Analyst answers anything: the role,
--- the region, and Snowflake Intelligence being switched on. Trial accounts
+-- the region, and Snowflake CoWork being switched on. Trial accounts
 -- routinely fail the second. See GOTCHAS.md section 7.
 -- ---------------------------------------------------------------------------
 
@@ -243,11 +243,11 @@ GRANT DATABASE ROLE SNOWFLAKE.CORTEX_USER TO ROLE HOL_DBT;
 --
 -- GRANT SELECT ON ALL TABLES          IN SCHEMA HOL_SNOWFLAKE_INDUSTRY.IDENTIFIER($dbt_schema) TO ROLE HOL_ATTENDEE;
 -- GRANT SELECT ON ALL VIEWS           IN SCHEMA HOL_SNOWFLAKE_INDUSTRY.IDENTIFIER($dbt_schema) TO ROLE HOL_ATTENDEE;
--- GRANT SELECT ON ALL SEMANTIC VIEWS  IN SCHEMA HOL_SNOWFLAKE_INDUSTRY.IDENTIFIER($dbt_schema) TO ROLE HOL_ATTENDEE;
+-- GRANT REFERENCES, SELECT ON ALL SEMANTIC VIEWS  IN SCHEMA HOL_SNOWFLAKE_INDUSTRY.IDENTIFIER($dbt_schema) TO ROLE HOL_ATTENDEE;
 --
 -- GRANT SELECT ON FUTURE TABLES         IN SCHEMA HOL_SNOWFLAKE_INDUSTRY.IDENTIFIER($dbt_schema) TO ROLE HOL_ATTENDEE;
 -- GRANT SELECT ON FUTURE VIEWS          IN SCHEMA HOL_SNOWFLAKE_INDUSTRY.IDENTIFIER($dbt_schema) TO ROLE HOL_ATTENDEE;
--- GRANT SELECT ON FUTURE SEMANTIC VIEWS IN SCHEMA HOL_SNOWFLAKE_INDUSTRY.IDENTIFIER($dbt_schema) TO ROLE HOL_ATTENDEE;
+-- GRANT REFERENCES, SELECT ON FUTURE SEMANTIC VIEWS IN SCHEMA HOL_SNOWFLAKE_INDUSTRY.IDENTIFIER($dbt_schema) TO ROLE HOL_ATTENDEE;
 
 
 -- ---------------------------------------------------------------------------
