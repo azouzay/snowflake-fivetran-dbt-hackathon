@@ -381,26 +381,32 @@ modelling problem and is almost always a grant.
 
 ---
 
-## 9. One thing the Snowflake side cannot fix
+## 9. Registering the dbt MCP Server directly in Snowflake CoWork
 
-Worth knowing so nobody spends the morning on it.
+Worth knowing because this used to be a hard blocker and no longer is.
 
 The lab wires the dbt Semantic Layer into an AI client through the dbt MCP
-Server. Registering that server directly inside Snowflake CoWork does not
-currently work, and it is not a configuration problem on your side.
+Server. Earlier drafts of this guide said registering that server directly
+inside Snowflake CoWork did not work: Snowflake's `CREATE EXTERNAL MCP SERVER`
+wanted a confidential OAuth client with a secret, and dbt's remote MCP issued
+only public clients using PKCE, with no documented way for Snowflake to send
+the `x-dbt-prod-environment-id` header dbt's token-auth path requires.
 
-Snowflake's `CREATE EXTERNAL MCP SERVER` requires an API integration using
-OAuth with a client ID and client secret, and the documentation states OAuth is
-the only supported method for MCP server connections. dbt's remote MCP server
-offers token auth via headers, or OAuth where manually registered clients use
-PKCE **instead of** a client secret. Snowflake wants a confidential client;
-dbt issues a public one. Separately, dbt's endpoint needs an
-`x-dbt-prod-environment-id` header that the Snowflake connector has no
-documented way to send.
+Snowflake has since added OAuth Dynamic Client Registration (DCR) for external
+MCP connectors. Snowflake self-registers against dbt's OAuth endpoint on first
+connect and authenticates with PKCE — the exact client type dbt already
+issues — so no client secret is needed on either side, and no header is
+needed either since this path uses per-user OAuth consent rather than a stored
+token. dbt documents the pairing directly:
+[Integrate Snowflake Cortex agents with dbt MCP](https://docs.getdbt.com/docs/dbt-ai/integrate-mcp-snowflake-cortex).
 
-`docs/dbt-mcp-on-snowflake-cowork.md` covers this in full and gives the attendees a
-path that works today. Nothing is required from the Snowflake side beyond the
-Semantic View grants in section 8.
+`docs/dbt-mcp-on-snowflake-cowork.md` section 3 has the SQL and prerequisites
+(OAuth on the dbt side is Beta, needs a static subdomain), plus a
+non-Snowflake-client fallback in section 4 for accounts that don't meet those.
+This has been checked against current documentation, not against a live run in
+this lab's account — smoke-test it before relying on it for a delivery.
+Nothing else is required from the Snowflake side beyond the Semantic View
+grants in section 8.
 
 ---
 
@@ -423,3 +429,4 @@ Run through this the day before, not the morning of.
 - [ ] `SHOW SNOWFLAKE INTELLIGENCES` checked; if a CoWork object exists, every agent added to it and `USAGE` granted
 - [ ] Semantic View grants applied **after** the dbt job has run at least once, including `REFERENCES` and not just `SELECT`
 - [ ] One end-to-end question answered in Snowflake CoWork, signed in as an attendee-role user rather than as ACCOUNTADMIN
+- [ ] dbt MCP Server direct registration (section 9) smoke-tested end to end at least once: connector created, connected, added to one agent, one question answered

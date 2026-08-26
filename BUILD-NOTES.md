@@ -193,33 +193,33 @@ because its branches are cleanly independent.
 
 ## 4. Open items and honest gaps
 
-### The dbt MCP Server cannot currently be registered directly in Snowflake CoWork
+### The dbt MCP Server can now be registered directly in Snowflake CoWork
 
-This is the one place the lab could not be built as specified, and it is a
-product-compatibility gap rather than a design choice.
+This used to be the one place the lab could not be built as specified. It no
+longer is, but the fix is recent enough that it needs a live smoke test before
+you trust it in front of a room.
 
-- Snowflake's `CREATE EXTERNAL MCP SERVER` requires an API integration with
-  `API_USER_AUTHENTICATION = (TYPE = OAUTH2 ...)`, including
-  `OAUTH_CLIENT_ID` and `OAUTH_CLIENT_SECRET`. The documentation states
-  Snowflake supports OAuth only for MCP server connections; bearer-token and
-  header auth are not supported.
-- dbt's remote MCP server offers either token auth (an `Authorization` header
-  plus an `x-dbt-prod-environment-id` header) or OAuth. Its OAuth uses dynamic
-  client registration (RFC 7591), and manually registered clients use PKCE
-  **instead of a client secret**.
+The original gap was real: Snowflake's `CREATE EXTERNAL MCP SERVER` wanted a
+confidential OAuth client with a secret, dbt's remote MCP issued only public
+clients with PKCE, and Snowflake had no documented way to send the
+`x-dbt-prod-environment-id` header dbt's token-auth path requires.
 
-So Snowflake wants a confidential client with a secret, dbt issues a public
-client with PKCE, and Snowflake has no documented way to send the required
-`x-dbt-prod-environment-id` header. Two independent blockers.
+Snowflake has since added OAuth Dynamic Client Registration (DCR) for external
+MCP connectors: Snowflake self-registers against dbt's OAuth endpoint on first
+connect and authenticates with PKCE, no secret stored on either side. That is
+the exact client type dbt already issues, so the mismatch is gone, and this
+DCR path uses per-user OAuth consent rather than a stored token, so the header
+requirement doesn't apply either. dbt documents this pairing directly:
+[Integrate Snowflake Cortex agents with dbt MCP](https://docs.getdbt.com/docs/dbt-ai/integrate-mcp-snowflake-cortex).
 
-`docs/dbt-mcp-on-snowflake-cowork.md` documents both sides accurately, states the
-blocker precisely with citations, marks the direct-registration path
-`TODO: verify`, and gives a hands-on alternative that works today. The
-Snowflake Semantic View path via Cortex Analyst stays fully hands-on, so the
-consumption section of the lab is not weakened.
+`docs/dbt-mcp-on-snowflake-cowork.md` section 3 has the SQL and prerequisites
+(OAuth for remote MCP is Beta, requires a static subdomain). It is checked
+against current documentation, not against a live run in this lab's account —
+that's the next thing to close before relying on it. The Snowflake Semantic
+View path via Cortex Analyst stays fully hands-on regardless, so the
+consumption section of the lab was never weakened by this gap.
 
-Re-check before each delivery. Both products are moving quickly and this may
-have closed.
+Re-check before each delivery. Both products are moving quickly.
 
 ### What HAS been verified with the dbt CLI
 

@@ -548,21 +548,19 @@ ever saw the data.
 Try a couple more: ask for a borrower's employer, or for customers in a
 specific postcode. Same outcome, same reason.
 
-### 9.3 dbt Semantic Layer, via the dbt MCP Server (guided)
-
-The instructor will walk through this rather than everyone doing it live, and
-there is an honest reason why.
+### 9.3 dbt Semantic Layer, via the dbt MCP Server
 
 The dbt MCP Server exposes your MetricFlow metrics as tools an AI agent can
 call, so the agent asks dbt for `total_risk_weighted_exposure` rather than
-writing its own SQL against a table. Registering that server directly inside
-Snowflake CoWork **does not currently work**: Snowflake's external MCP
-connectors require OAuth with a client secret, and dbt's remote MCP server
-issues public clients using PKCE. Two products, two reasonable choices, one gap.
+writing its own SQL against a table. Register it directly as a tool on a
+Cortex Agent in Snowflake CoWork using OAuth Dynamic Client Registration —
+Snowflake self-registers with PKCE, no client secret needed on either side.
+Full setup, with the exact SQL:
+[dbt-mcp-on-snowflake-cowork.md](dbt-mcp-on-snowflake-cowork.md) section 3.
 
-What does work today, and is worth twenty minutes afterwards, is connecting the
-dbt MCP Server to an MCP client that supports it. Full instructions:
-[dbt-mcp-on-snowflake-cowork.md](dbt-mcp-on-snowflake-cowork.md).
+If your account lacks a static subdomain or the OAuth beta isn't enabled, the
+same doc's section 4 covers connecting the dbt MCP Server to a non-Snowflake
+MCP client instead, worth twenty minutes either way.
 
 **The takeaway for this track specifically:** when the agent answers through
 the semantic layer, it is constrained to metrics somebody defined, reviewed and

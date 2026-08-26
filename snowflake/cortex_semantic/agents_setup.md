@@ -327,11 +327,13 @@ This page covers the Snowflake-native path: metrics defined in a Snowflake
 Semantic View, read by Cortex Analyst.
 
 The other path is metrics defined in the dbt Semantic Layer and served through
-the dbt MCP Server. Registering that server directly inside Snowflake
-Intelligence does not currently work: Snowflake's external MCP connectors
-require OAuth with a client secret, and dbt's remote MCP server issues public
-clients using PKCE. Nothing is required from the Snowflake side to work around
-it.
+the dbt MCP Server. Registering that server directly as a Cortex Agent tool
+inside Snowflake CoWork now works, using OAuth Dynamic Client Registration —
+Snowflake self-registers with PKCE, no client secret needed on either side.
+This closed a real gap that existed earlier in this lab's life; the OAuth path
+on the dbt side is still Beta, so smoke-test it before relying on it for a
+delivery.
 
-The full explanation, with citations and a path that works today, is in
+The full explanation, with citations, the SQL, and a non-Snowflake-client
+alternative, is in
 [../../docs/dbt-mcp-on-snowflake-cowork.md](../../docs/dbt-mcp-on-snowflake-cowork.md).
