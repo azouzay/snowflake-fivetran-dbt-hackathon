@@ -39,18 +39,11 @@ vars:
     failure rate and maintenance cost of the equipment fleet.
 
   # ---- WHERE YOUR RAW DATA LIVES ------------------------------------------
-  # Fivetran lands your data here. The database is created by the Snowflake
-  # team ahead of the lab; see snowflake/reference_setup.sql.
-  source_database: 'HOL_SNOWFLAKE_INDUSTRY'
+  # Fivetran lands the Google Cloud PostgreSQL energy data in this Snowflake
+  # database and schema. All source() calls resolve through these two vars.
+  source_database: 'AYMEN'
+  source_schema: 'GOOGLE_CLOUD_POSTGRESQL_ENERGY'
 
-  # >>> EDIT THIS ONE LINE <<<
-  # Change to your own Fivetran destination schema, which is
-  # <firstname>_<lastname>_energy (all lowercase).
-  #
-  # Having trouble? If your Fivetran sync is slow or you hit errors you cannot
-  # resolve, set this back to 'hicham_bab_energy' to use the instructor's data
-  # and keep going. Nothing else in the lab needs to change.
-  source_schema: 'hicham_bab_energy'
 
 models:
   hol_energy:
