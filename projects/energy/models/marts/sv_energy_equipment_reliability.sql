@@ -13,7 +13,8 @@
 -- trustworthy as the model underneath it.
 -- ---------------------------------------------------------------------------
 
-{{ config(materialized='semantic_view') }}
+{{ config(materialized='semantic_view', static_analysis='off') }}
+
 
 TABLES (
 

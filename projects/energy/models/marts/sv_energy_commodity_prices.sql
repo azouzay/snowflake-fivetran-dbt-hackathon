@@ -17,7 +17,8 @@
 -- year", or the agent will correctly tell you there is nothing to report.
 -- ---------------------------------------------------------------------------
 
-{{ config(materialized='semantic_view') }}
+{{ config(materialized='semantic_view', static_analysis='off') }}
+
 
 TABLES (
 
